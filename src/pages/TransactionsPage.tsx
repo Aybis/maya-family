@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, ArrowUp, ArrowDown, Calendar, CreditCard } from 'lucide-react';
+import { Plus, Search, Filter, ArrowUp, ArrowDown, Calendar, CreditCard, Edit, Trash2 } from 'lucide-react';
 import TransactionModal from '../components/TransactionModal';
-import { mockTransactions } from '../data/mockData';
+import EditTransactionModal from '../components/EditTransactionModal';
+import { useTransactionStore } from '../store/useTransactionStore';
 
 const TransactionsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+
+  const transactions = useTransactionStore((state) => state.transactions);
+  const deleteTransaction = useTransactionStore((state) => state.deleteTransaction);
+  const totalIncome = useTransactionStore((state) => state.getTotalIncome());
+  const totalExpenses = useTransactionStore((state) => state.getTotalExpenses());
+  const netBalance = useTransactionStore((state) => state.getNetBalance());
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -16,7 +25,7 @@ const TransactionsPage: React.FC = () => {
     }).format(amount);
   };
 
-  const filteredTransactions = mockTransactions.filter(transaction => {
+  const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = selectedFilter === 'all' || transaction.type === selectedFilter;
@@ -37,6 +46,17 @@ const TransactionsPage: React.FC = () => {
         return '📲';
       default:
         return '💳';
+    }
+  };
+
+  const handleEdit = (transaction: any) => {
+    setEditingTransaction(transaction);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this transaction?')) {
+      deleteTransaction(id);
     }
   };
 
@@ -106,10 +126,7 @@ const TransactionsPage: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Total Income</p>
               <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(mockTransactions
-                  .filter(t => t.type === 'income')
-                  .reduce((sum, t) => sum + t.amount, 0)
-                )}
+                {formatCurrency(totalIncome)}
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-xl">
@@ -123,10 +140,7 @@ const TransactionsPage: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Total Expenses</p>
               <p className="text-2xl font-bold text-red-600">
-                {formatCurrency(mockTransactions
-                  .filter(t => t.type === 'expense')
-                  .reduce((sum, t) => sum + t.amount, 0)
-                )}
+                {formatCurrency(totalExpenses)}
               </p>
             </div>
             <div className="p-3 bg-red-100 rounded-xl">
@@ -140,9 +154,7 @@ const TransactionsPage: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Net Balance</p>
               <p className="text-2xl font-bold text-blue-600">
-                {formatCurrency(mockTransactions
-                  .reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0)
-                )}
+                {formatCurrency(netBalance)}
               </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-xl">
@@ -163,7 +175,7 @@ const TransactionsPage: React.FC = () => {
         <div className="divide-y divide-gray-200">
           {filteredTransactions.length > 0 ? (
             filteredTransactions.map((transaction) => (
-              <div key={transaction.id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div key={transaction.id} className="p-6 hover:bg-gray-50 transition-colors group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className={`p-3 rounded-full ${
@@ -187,19 +199,37 @@ const TransactionsPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-bold ${
-                      transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(transaction.date).toLocaleDateString('id-ID', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className={`text-lg font-bold ${
+                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(transaction.date).toLocaleDateString('id-ID', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleEdit(transaction)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit transaction"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(transaction.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete transaction"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -222,8 +252,16 @@ const TransactionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Transaction Modal */}
+      {/* Modals */}
       <TransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <EditTransactionModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingTransaction(null);
+        }}
+        transaction={editingTransaction}
+      />
     </div>
   );
 };

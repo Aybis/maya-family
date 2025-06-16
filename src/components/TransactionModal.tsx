@@ -1,31 +1,81 @@
 import React, { useState } from 'react';
 import { X, Camera, Plus, Calculator } from 'lucide-react';
 import { categories, paymentMethods } from '../data/mockData';
+import { useTransactionStore } from '../store/useTransactionStore';
+import { useWarehouseStore } from '../store/useWarehouseStore';
 
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editTransaction?: any;
 }
 
-const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) => {
+const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, editTransaction }) => {
   const [activeTab, setActiveTab] = useState<'manual' | 'camera'>('manual');
   const [formData, setFormData] = useState({
-    type: 'expense',
-    amount: '',
-    category: '',
-    description: '',
-    paymentMethod: '',
+    type: editTransaction?.type || 'expense',
+    amount: editTransaction?.amount?.toString() || '',
+    category: editTransaction?.category || '',
+    description: editTransaction?.description || '',
+    paymentMethod: editTransaction?.paymentMethod || '',
     cashGiven: '',
     calculateChange: false
   });
+
+  const addTransaction = useTransactionStore((state) => state.addTransaction);
+  const updateTransaction = useTransactionStore((state) => state.updateTransaction);
+  const consumeItem = useWarehouseStore((state) => state.consumeItem);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock submission
-    console.log('Transaction submitted:', formData);
+    
+    const transactionData = {
+      type: formData.type as 'income' | 'expense',
+      amount: parseFloat(formData.amount),
+      category: formData.category,
+      description: formData.description,
+      paymentMethod: formData.paymentMethod,
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    if (editTransaction) {
+      updateTransaction(editTransaction.id, transactionData);
+    } else {
+      addTransaction(transactionData);
+      
+      // Auto-consume warehouse items for food purchases
+      if (formData.category === 'Food' && formData.type === 'expense') {
+        const description = formData.description.toLowerCase();
+        
+        // Simple keyword matching for common items
+        const itemMappings = [
+          { keywords: ['rice', 'beras'], quantity: 1 },
+          { keywords: ['oil', 'minyak'], quantity: 1 },
+          { keywords: ['tissue', 'tisu'], quantity: 2 },
+          { keywords: ['shampoo'], quantity: 1 },
+          { keywords: ['detergent', 'deterjen'], quantity: 1 }
+        ];
+
+        itemMappings.forEach(({ keywords, quantity }) => {
+          if (keywords.some(keyword => description.includes(keyword))) {
+            consumeItem(keywords[0], quantity);
+          }
+        });
+      }
+    }
+
     onClose();
+    setFormData({
+      type: 'expense',
+      amount: '',
+      category: '',
+      description: '',
+      paymentMethod: '',
+      cashGiven: '',
+      calculateChange: false
+    });
   };
 
   const calculatedChange = formData.cashGiven && formData.amount 
@@ -37,7 +87,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) 
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Add Transaction</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {editTransaction ? 'Edit Transaction' : 'Add Transaction'}
+          </h2>
           <button 
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -190,7 +242,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) 
                 type="submit"
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
               >
-                Add Transaction
+                {editTransaction ? 'Update Transaction' : 'Add Transaction'}
               </button>
             </form>
           ) : (

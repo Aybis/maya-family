@@ -1,25 +1,57 @@
 import React, { useState } from 'react';
-import { Package, AlertTriangle, Plus, Search, Bell, RefreshCw } from 'lucide-react';
-import { mockWarehouseItems } from '../data/mockData';
+import { Package, AlertTriangle, Plus, Search, Bell, RefreshCw, Edit, Trash2 } from 'lucide-react';
+import { useWarehouseStore } from '../store/useWarehouseStore';
 
 const WarehousePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
-  const categories = ['all', ...Array.from(new Set(mockWarehouseItems.map(item => item.category)))];
+  const items = useWarehouseStore((state) => state.items);
+  const updateStock = useWarehouseStore((state) => state.updateStock);
+  const updateItem = useWarehouseStore((state) => state.updateItem);
+  const deleteItem = useWarehouseStore((state) => state.deleteItem);
+  const addItem = useWarehouseStore((state) => state.addItem);
+  const getLowStockItems = useWarehouseStore((state) => state.getLowStockItems);
+
+  const categories = ['all', ...Array.from(new Set(items.map(item => item.category)))];
+  const lowStockItems = getLowStockItems();
   
-  const filteredItems = mockWarehouseItems.filter(item => {
+  const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const lowStockItems = mockWarehouseItems.filter(item => item.currentStock <= item.minStock);
-
   const getStockStatus = (current: number, min: number) => {
     if (current === 0) return { status: 'empty', color: 'bg-red-100 text-red-800', text: 'Out of Stock' };
     if (current <= min) return { status: 'low', color: 'bg-yellow-100 text-yellow-800', text: 'Low Stock' };
     return { status: 'good', color: 'bg-green-100 text-green-800', text: 'In Stock' };
+  };
+
+  const handleStockUpdate = (itemId: string, newStock: number) => {
+    updateStock(itemId, newStock);
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingItem(item);
+  };
+
+  const handleSaveEdit = (updatedItem: any) => {
+    updateItem(editingItem.id, updatedItem);
+    setEditingItem(null);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this item?')) {
+      deleteItem(id);
+    }
+  };
+
+  const handleAddItem = (newItem: any) => {
+    addItem(newItem);
+    setShowAddForm(false);
   };
 
   return (
@@ -35,7 +67,10 @@ const WarehousePage: React.FC = () => {
             <Bell className="h-4 w-4 mr-2" />
             Send Reminders
           </button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center">
+          <button 
+            onClick={() => setShowAddForm(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Item
           </button>
@@ -99,29 +134,136 @@ const WarehousePage: React.FC = () => {
         </div>
       </div>
 
+      {/* Add Item Form */}
+      {showAddForm && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Item</h3>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target as HTMLFormElement);
+            handleAddItem({
+              name: formData.get('name'),
+              currentStock: parseInt(formData.get('currentStock') as string),
+              minStock: parseInt(formData.get('minStock') as string),
+              unit: formData.get('unit'),
+              category: formData.get('category')
+            });
+          }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <input
+              name="name"
+              type="text"
+              placeholder="Item name"
+              required
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              name="currentStock"
+              type="number"
+              placeholder="Current stock"
+              required
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              name="minStock"
+              type="number"
+              placeholder="Min stock"
+              required
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              name="unit"
+              type="text"
+              placeholder="Unit (kg, pcs, etc.)"
+              required
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <select
+              name="category"
+              required
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select category</option>
+              <option value="Food">Food</option>
+              <option value="Household">Household</option>
+              <option value="Personal Care">Personal Care</option>
+              <option value="Others">Others</option>
+            </select>
+            <div className="flex gap-2 sm:col-span-2 lg:col-span-5">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Add Item
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Inventory Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredItems.map((item) => {
           const stockStatus = getStockStatus(item.currentStock, item.minStock);
+          const isEditing = editingItem?.id === item.id;
+          
           return (
-            <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow group">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      defaultValue={item.name}
+                      className="font-semibold text-gray-900 mb-1 w-full border border-gray-300 rounded px-2 py-1"
+                      onBlur={(e) => handleSaveEdit({ ...item, name: e.target.value })}
+                    />
+                  ) : (
+                    <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
+                  )}
                   <p className="text-sm text-gray-500">{item.category}</p>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color}`}>
-                  {stockStatus.text}
-                </span>
+                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    title="Edit item"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Delete item"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
+
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color} mb-4 inline-block`}>
+                {stockStatus.text}
+              </span>
 
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-600">Current Stock</span>
-                    <span className="text-lg font-bold text-gray-900">
-                      {item.currentStock} {item.unit}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        value={item.currentStock}
+                        onChange={(e) => handleStockUpdate(item.id, parseInt(e.target.value) || 0)}
+                        className="text-lg font-bold text-gray-900 w-16 text-right border border-gray-300 rounded px-1"
+                      />
+                      <span className="text-sm text-gray-600">{item.unit}</span>
+                    </div>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div

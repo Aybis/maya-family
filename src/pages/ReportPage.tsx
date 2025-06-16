@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Calendar, Download, Filter } from 'lucide-react';
 import MetricCard from '../components/MetricCard';
-import { mockDashboardMetrics, mockTransactions } from '../data/mockData';
+import { useTransactionStore } from '../store/useTransactionStore';
 
 const ReportPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const transactions = useTransactionStore((state) => state.transactions);
+  const totalIncome = useTransactionStore((state) => state.getTotalIncome());
+  const totalExpenses = useTransactionStore((state) => state.getTotalExpenses());
+  const netBalance = useTransactionStore((state) => state.getNetBalance());
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -15,20 +20,34 @@ const ReportPage: React.FC = () => {
     }).format(amount);
   };
 
-  const categoryData = [
-    { name: 'Food', income: 0, expense: 250000, color: 'bg-blue-500' },
-    { name: 'Transportation', income: 0, expense: 50000, color: 'bg-green-500' },
-    { name: 'Bills', income: 0, expense: 150000, color: 'bg-purple-500' },
-    { name: 'Salary', income: 5000000, expense: 0, color: 'bg-emerald-500' },
-    { name: 'Freelance', income: 500000, expense: 0, color: 'bg-teal-500' }
-  ];
+  // Calculate category data from actual transactions
+  const categoryData = transactions.reduce((acc: any[], transaction) => {
+    const existingCategory = acc.find(cat => cat.name === transaction.category);
+    if (existingCategory) {
+      if (transaction.type === 'income') {
+        existingCategory.income += transaction.amount;
+      } else {
+        existingCategory.expense += transaction.amount;
+      }
+    } else {
+      acc.push({
+        name: transaction.category,
+        income: transaction.type === 'income' ? transaction.amount : 0,
+        expense: transaction.type === 'expense' ? transaction.amount : 0,
+        color: `bg-${['blue', 'green', 'purple', 'emerald', 'teal', 'indigo', 'pink'][acc.length % 7]}-500`
+      });
+    }
+    return acc;
+  }, []);
 
   const monthlyTrends = [
     { month: 'Oct', income: 4800000, expense: 400000 },
     { month: 'Nov', income: 5200000, expense: 380000 },
     { month: 'Dec', income: 5500000, expense: 420000 },
-    { month: 'Jan', income: 5500000, expense: 450000 }
+    { month: 'Jan', income: totalIncome, expense: totalExpenses }
   ];
+
+  const savingsRate = totalIncome > 0 ? ((netBalance / totalIncome) * 100).toFixed(1) : '0';
 
   return (
     <div className="space-y-8">
@@ -76,10 +95,9 @@ const ReportPage: React.FC = () => {
                 className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 <option value="all">All Categories</option>
-                <option value="food">Food</option>
-                <option value="transportation">Transportation</option>
-                <option value="bills">Bills</option>
-                <option value="entertainment">Entertainment</option>
+                {categoryData.map(cat => (
+                  <option key={cat.name} value={cat.name.toLowerCase()}>{cat.name}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -102,7 +120,7 @@ const ReportPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Monthly Income"
-          value={formatCurrency(mockDashboardMetrics.totalIncome)}
+          value={formatCurrency(totalIncome)}
           change="+12.5%"
           changeType="positive"
           icon={TrendingUp}
@@ -110,7 +128,7 @@ const ReportPage: React.FC = () => {
         />
         <MetricCard
           title="Monthly Expenses"
-          value={formatCurrency(mockDashboardMetrics.totalExpenses)}
+          value={formatCurrency(totalExpenses)}
           change="+8.2%"
           changeType="negative"
           icon={TrendingDown}
@@ -118,7 +136,7 @@ const ReportPage: React.FC = () => {
         />
         <MetricCard
           title="Net Savings"
-          value={formatCurrency(mockDashboardMetrics.totalSavings)}
+          value={formatCurrency(netBalance)}
           change="+15.3%"
           changeType="positive"
           icon={TrendingUp}
@@ -126,7 +144,7 @@ const ReportPage: React.FC = () => {
         />
         <MetricCard
           title="Savings Rate"
-          value="91.8%"
+          value={`${savingsRate}%`}
           change="+2.1%"
           changeType="positive"
           icon={BarChart3}
@@ -224,8 +242,8 @@ const ReportPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {categoryData.map((category) => {
                 const net = category.income - category.expense;
-                const totalTransactions = mockTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-                const percentage = ((category.income + category.expense) / totalTransactions * 100).toFixed(1);
+                const totalTransactions = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                const percentage = totalTransactions > 0 ? ((category.income + category.expense) / totalTransactions * 100).toFixed(1) : '0';
                 
                 return (
                   <tr key={category.name} className="hover:bg-gray-50">

@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Wallet, TrendingUp, TrendingDown, PiggyBank, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import MetricCard from '../components/MetricCard';
-import { mockDashboardMetrics, mockTransactions } from '../data/mockData';
+import StockWarning from '../components/StockWarning';
+import TransactionModal from '../components/TransactionModal';
+import { useTransactionStore } from '../store/useTransactionStore';
 
 const DashboardPage: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showStockWarning, setShowStockWarning] = useState(true);
+  
+  const transactions = useTransactionStore((state) => state.transactions);
+  const totalIncome = useTransactionStore((state) => state.getTotalIncome());
+  const totalExpenses = useTransactionStore((state) => state.getTotalExpenses());
+  const netBalance = useTransactionStore((state) => state.getNetBalance());
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -12,7 +22,9 @@ const DashboardPage: React.FC = () => {
     }).format(amount);
   };
 
-  const recentTransactions = mockTransactions.slice(0, 5);
+  const recentTransactions = transactions.slice(0, 5);
+  const monthlyBudget = 6000000;
+  
   const expenseCategories = [
     { name: 'Food', amount: 250000, percentage: 55 },
     { name: 'Transportation', amount: 50000, percentage: 11 },
@@ -21,6 +33,11 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {/* Stock Warning */}
+      {showStockWarning && (
+        <StockWarning onDismiss={() => setShowStockWarning(false)} />
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -28,7 +45,10 @@ const DashboardPage: React.FC = () => {
           <p className="text-gray-600">Welcome back! Here's your financial overview.</p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Quick Add
           </button>
@@ -39,7 +59,7 @@ const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Income"
-          value={formatCurrency(mockDashboardMetrics.totalIncome)}
+          value={formatCurrency(totalIncome)}
           change="+12.5%"
           changeType="positive"
           icon={TrendingUp}
@@ -47,7 +67,7 @@ const DashboardPage: React.FC = () => {
         />
         <MetricCard
           title="Total Expenses"
-          value={formatCurrency(mockDashboardMetrics.totalExpenses)}
+          value={formatCurrency(totalExpenses)}
           change="+8.2%"
           changeType="negative"
           icon={TrendingDown}
@@ -55,7 +75,7 @@ const DashboardPage: React.FC = () => {
         />
         <MetricCard
           title="Total Savings"
-          value={formatCurrency(mockDashboardMetrics.totalSavings)}
+          value={formatCurrency(netBalance)}
           change="+15.3%"
           changeType="positive"
           icon={PiggyBank}
@@ -63,8 +83,8 @@ const DashboardPage: React.FC = () => {
         />
         <MetricCard
           title="Monthly Budget"
-          value={formatCurrency(mockDashboardMetrics.monthlyBudget)}
-          change="84% used"
+          value={formatCurrency(monthlyBudget)}
+          change={`${Math.round((totalExpenses / monthlyBudget) * 100)}% used`}
           changeType="neutral"
           icon={Wallet}
           iconColor="text-purple-600"
@@ -161,6 +181,9 @@ const DashboardPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Transaction Modal */}
+      <TransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 };

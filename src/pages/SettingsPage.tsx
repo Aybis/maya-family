@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { User, Mail, Bell, Shield, Palette, Globe, Save, ChevronRight, Sun, Moon, Monitor } from 'lucide-react';
+import { User, Mail, Bell, Shield, Palette, Globe, Save, ChevronRight, Sun, Moon, Monitor, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '../store/useThemeStore';
+import { useAIStore } from '../store/useAIStore';
 import { aiAssistants } from '../data/mockData';
+import AISettingsModal from '../components/AISettingsModal';
 
 const SettingsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { theme, isDark, setTheme } = useThemeStore();
+  const { settings: aiSettings } = useAIStore();
+  const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
 
   const [settings, setSettings] = useState({
     profile: {
@@ -63,6 +67,15 @@ const SettingsPage: React.FC = () => {
     { value: 'dark', label: t('dark'), icon: Moon },
     { value: 'auto', label: t('auto'), icon: Monitor }
   ];
+
+  const getAIProviderName = (provider: string) => {
+    switch (provider) {
+      case 'openai': return 'OpenAI GPT-4 Vision';
+      case 'gemini': return 'Google Gemini Pro Vision';
+      case 'mock': return 'Demo Mode';
+      default: return 'Not configured';
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -162,6 +175,41 @@ const SettingsPage: React.FC = () => {
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* AI Scanner Settings */}
+      <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`p-6 border-b transition-colors duration-300 ${
+          isDark ? 'border-dark-700' : 'border-gray-200'
+        }`}>
+          <div className="flex items-center">
+            <Zap className="h-5 w-5 text-blue-600 mr-3" />
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              AI Receipt Scanner
+            </h3>
+          </div>
+        </div>
+        
+        <div className="p-6">
+          <button
+            onClick={() => setIsAISettingsOpen(true)}
+            className={`w-full flex items-center justify-between p-4 text-left rounded-lg transition-colors ${
+              isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
+            }`}
+          >
+            <div>
+              <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                AI Provider Configuration
+              </h4>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                Current: {getAIProviderName(aiSettings.provider)}
+              </p>
+            </div>
+            <ChevronRight className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+          </button>
         </div>
       </div>
 
@@ -461,6 +509,12 @@ const SettingsPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* AI Settings Modal */}
+      <AISettingsModal 
+        isOpen={isAISettingsOpen} 
+        onClose={() => setIsAISettingsOpen(false)} 
+      />
     </div>
   );
 };

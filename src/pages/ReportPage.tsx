@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Calendar, Download, Filter } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useThemeStore } from '../store/useThemeStore';
 import MetricCard from '../components/MetricCard';
 import { useTransactionStore } from '../store/useTransactionStore';
 
@@ -7,6 +9,9 @@ const ReportPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
+  const { t } = useTranslation();
+  const { isDark } = useThemeStore();
+  
   const transactions = useTransactionStore((state) => state.transactions);
   const totalIncome = useTransactionStore((state) => state.getTotalIncome());
   const totalExpenses = useTransactionStore((state) => state.getTotalExpenses());
@@ -54,11 +59,15 @@ const ReportPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Financial Reports</h1>
-          <p className="text-gray-600">Analyze your financial performance and trends</p>
+          <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            Financial Reports
+          </h1>
+          <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
+            Analyze your financial performance and trends
+          </p>
         </div>
         <div className="flex gap-3 mt-4 sm:mt-0">
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center">
+          <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center shadow-lg">
             <Download className="h-4 w-4 mr-2" />
             Export PDF
           </button>
@@ -66,16 +75,24 @@ const ReportPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Time Period
+            </label>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className={`w-full pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  isDark 
+                    ? 'bg-dark-700 border-dark-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               >
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
@@ -86,13 +103,19 @@ const ReportPage: React.FC = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Category
+            </label>
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Filter className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className={`w-full pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  isDark 
+                    ? 'bg-dark-700 border-dark-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               >
                 <option value="all">All Categories</option>
                 {categoryData.map(cat => (
@@ -103,10 +126,16 @@ const ReportPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Report Type
+            </label>
             <div className="relative">
-              <BarChart3 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <select className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+              <BarChart3 className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+              <select className={`w-full pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                isDark 
+                  ? 'bg-dark-700 border-dark-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}>
                 <option value="summary">Summary</option>
                 <option value="detailed">Detailed</option>
                 <option value="comparison">Comparison</option>
@@ -155,17 +184,21 @@ const ReportPage: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Monthly Trends */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+          isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+        }`}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Monthly Trends</h3>
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Monthly Trends
+            </h3>
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                <span className="text-gray-600">Income</span>
+                <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Income</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                <span className="text-gray-600">Expense</span>
+                <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Expense</span>
               </div>
             </div>
           </div>
@@ -183,16 +216,22 @@ const ReportPage: React.FC = () => {
                     style={{ height: `${(data.expense / 6000000) * 200}px` }}
                   ></div>
                 </div>
-                <span className="text-sm font-medium text-gray-600">{data.month}</span>
+                <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {data.month}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Category Breakdown */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+          isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+        }`}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Category Breakdown</h3>
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Category Breakdown
+            </h3>
           </div>
           
           <div className="space-y-4">
@@ -204,14 +243,16 @@ const ReportPage: React.FC = () => {
               return (
                 <div key={category.name} className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">{category.name}</span>
-                    <span className="text-sm text-gray-600">
+                    <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      {category.name}
+                    </span>
+                    <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                       {category.income > 0 ? `+${formatCurrency(category.income)}` : `-${formatCurrency(category.expense)}`}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className={`w-full rounded-full h-2 ${isDark ? 'bg-dark-600' : 'bg-gray-200'}`}>
                     <div
-                      className={`h-2 rounded-full ${category.color} transition-all duration-300`}
+                      className={`h-2 rounded-full transition-all duration-300 ${category.color}`}
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -223,34 +264,64 @@ const ReportPage: React.FC = () => {
       </div>
 
       {/* Summary Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Financial Summary</h3>
+      <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`p-6 border-b transition-colors duration-300 ${
+          isDark ? 'border-dark-700' : 'border-gray-200'
+        }`}>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            Financial Summary
+          </h3>
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className={isDark ? 'bg-dark-700' : 'bg-gray-50'}>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expense</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? 'text-gray-300' : 'text-gray-500'
+                }`}>
+                  Category
+                </th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? 'text-gray-300' : 'text-gray-500'
+                }`}>
+                  Income
+                </th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? 'text-gray-300' : 'text-gray-500'
+                }`}>
+                  Expense
+                </th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? 'text-gray-300' : 'text-gray-500'
+                }`}>
+                  Net
+                </th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? 'text-gray-300' : 'text-gray-500'
+                }`}>
+                  % of Total
+                </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className={`divide-y ${isDark ? 'divide-dark-700' : 'divide-gray-200'}`}>
               {categoryData.map((category) => {
                 const net = category.income - category.expense;
                 const totalTransactions = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
                 const percentage = totalTransactions > 0 ? ((category.income + category.expense) / totalTransactions * 100).toFixed(1) : '0';
                 
                 return (
-                  <tr key={category.name} className="hover:bg-gray-50">
+                  <tr key={category.name} className={`transition-colors ${
+                    isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
+                  }`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className={`w-3 h-3 rounded-full mr-3 ${category.color}`}></div>
-                        <span className="text-sm font-medium text-gray-900">{category.name}</span>
+                        <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {category.name}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
@@ -264,7 +335,7 @@ const ReportPage: React.FC = () => {
                     }`}>
                       {formatCurrency(Math.abs(net))}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                       {percentage}%
                     </td>
                   </tr>

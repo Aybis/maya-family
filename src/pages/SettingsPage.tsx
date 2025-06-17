@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
-import { User, Mail, Bell, Shield, Palette, Globe, Save, ChevronRight } from 'lucide-react';
+import { User, Mail, Bell, Shield, Palette, Globe, Save, ChevronRight, Sun, Moon, Monitor } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useThemeStore } from '../store/useThemeStore';
 import { aiAssistants } from '../data/mockData';
 
 const SettingsPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
+  const { theme, isDark, setTheme } = useThemeStore();
+
   const [settings, setSettings] = useState({
     profile: {
       name: 'John Doe',
@@ -12,8 +17,8 @@ const SettingsPage: React.FC = () => {
     preferences: {
       aiAssistant: 'chatgpt',
       currency: 'IDR',
-      language: 'id',
-      theme: 'light'
+      language: i18n.language,
+      theme: theme
     },
     notifications: {
       email: true,
@@ -31,7 +36,6 @@ const SettingsPage: React.FC = () => {
   });
 
   const handleSave = () => {
-    // Mock save functionality
     console.log('Settings saved:', settings);
   };
 
@@ -43,31 +47,56 @@ const SettingsPage: React.FC = () => {
         [key]: value
       }
     }));
+
+    // Handle special cases
+    if (section === 'preferences') {
+      if (key === 'language') {
+        i18n.changeLanguage(value);
+      } else if (key === 'theme') {
+        setTheme(value);
+      }
+    }
   };
+
+  const themeOptions = [
+    { value: 'light', label: t('light'), icon: Sun },
+    { value: 'dark', label: t('dark'), icon: Moon },
+    { value: 'auto', label: t('auto'), icon: Monitor }
+  ];
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Settings</h1>
-          <p className="text-gray-600">Manage your account and application preferences</p>
+          <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            {t('settings')}
+          </h1>
+          <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
+            {t('manage_preferences')}
+          </p>
         </div>
         <button
           onClick={handleSave}
           className="mt-4 sm:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
         >
           <Save className="h-4 w-4 mr-2" />
-          Save Changes
+          {t('save_changes')}
         </button>
       </div>
 
       {/* Profile Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
+      <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`p-6 border-b transition-colors duration-300 ${
+          isDark ? 'border-dark-700' : 'border-gray-200'
+        }`}>
           <div className="flex items-center">
-            <User className="h-5 w-5 text-gray-500 mr-3" />
-            <h3 className="text-lg font-semibold text-gray-900">Profile Information</h3>
+            <User className={`h-5 w-5 mr-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t('profile_information')}
+            </h3>
           </div>
         </div>
         
@@ -78,38 +107,58 @@ const SettingsPage: React.FC = () => {
             </div>
             <div className="flex-1">
               <button className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors">
-                Change Photo
+                {t('change_photo')}
               </button>
-              <p className="text-sm text-gray-500 mt-1">JPG, PNG or GIF. Max size 2MB</p>
+              <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                JPG, PNG or GIF. Max size 2MB
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                {t('full_name')}
+              </label>
               <input
                 type="text"
                 value={settings.profile.name}
                 onChange={(e) => updateSetting('profile', 'name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  isDark 
+                    ? 'bg-dark-700 border-dark-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                {t('email_address')}
+              </label>
               <input
                 type="email"
                 value={settings.profile.email}
                 onChange={(e) => updateSetting('profile', 'email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  isDark 
+                    ? 'bg-dark-700 border-dark-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                {t('phone_number')}
+              </label>
               <input
                 type="tel"
                 value={settings.profile.phone}
                 onChange={(e) => updateSetting('profile', 'phone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  isDark 
+                    ? 'bg-dark-700 border-dark-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               />
             </div>
           </div>
@@ -117,34 +166,46 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* AI Assistant Preferences */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
+      <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`p-6 border-b transition-colors duration-300 ${
+          isDark ? 'border-dark-700' : 'border-gray-200'
+        }`}>
           <div className="flex items-center">
             <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded mr-3"></div>
-            <h3 className="text-lg font-semibold text-gray-900">AI Assistant</h3>
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t('ai_assistant')}
+            </h3>
           </div>
         </div>
         
         <div className="p-6">
-          <p className="text-gray-600 mb-4">Choose your preferred AI assistant for financial insights</p>
+          <p className={`mb-4 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            {t('choose_ai_assistant')}
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {aiAssistants.map((assistant) => (
               <div
                 key={assistant.id}
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
                   settings.preferences.aiAssistant === assistant.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : isDark
+                      ? 'border-dark-600 hover:border-dark-500 bg-dark-700'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
                 }`}
                 onClick={() => updateSetting('preferences', 'aiAssistant', assistant.id)}
               >
                 <div className="text-center">
                   <div className="text-2xl mb-2">{assistant.icon}</div>
-                  <h4 className="font-medium text-gray-900">{assistant.name}</h4>
+                  <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {assistant.name}
+                  </h4>
                   {settings.preferences.aiAssistant === assistant.id && (
                     <div className="mt-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Selected
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        {t('selected')}
                       </span>
                     </div>
                   )}
@@ -155,60 +216,35 @@ const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Notification Settings */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center">
-            <Bell className="h-5 w-5 text-gray-500 mr-3" />
-            <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-          </div>
-        </div>
-        
-        <div className="p-6 space-y-4">
-          {[
-            { key: 'email', label: 'Email Notifications', description: 'Receive updates via email' },
-            { key: 'whatsapp', label: 'WhatsApp Notifications', description: 'Get alerts on WhatsApp' },
-            { key: 'pushNotifications', label: 'Push Notifications', description: 'Browser notifications' },
-            { key: 'lowStockAlerts', label: 'Low Stock Alerts', description: 'When items are running low' },
-            { key: 'budgetAlerts', label: 'Budget Alerts', description: 'When approaching budget limits' },
-            { key: 'monthlyReports', label: 'Monthly Reports', description: 'Automated monthly summaries' }
-          ].map((notification) => (
-            <div key={notification.key} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg">
-              <div className="flex-1">
-                <h4 className="font-medium text-gray-900">{notification.label}</h4>
-                <p className="text-sm text-gray-500">{notification.description}</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.notifications[notification.key as keyof typeof settings.notifications]}
-                  onChange={(e) => updateSetting('notifications', notification.key, e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Application Preferences */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
+      <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`p-6 border-b transition-colors duration-300 ${
+          isDark ? 'border-dark-700' : 'border-gray-200'
+        }`}>
           <div className="flex items-center">
-            <Palette className="h-5 w-5 text-gray-500 mr-3" />
-            <h3 className="text-lg font-semibold text-gray-900">Preferences</h3>
+            <Palette className={`h-5 w-5 mr-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t('preferences')}
+            </h3>
           </div>
         </div>
         
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                {t('currency')}
+              </label>
               <select
                 value={settings.preferences.currency}
                 onChange={(e) => updateSetting('preferences', 'currency', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  isDark 
+                    ? 'bg-dark-700 border-dark-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               >
                 <option value="IDR">Indonesian Rupiah (IDR)</option>
                 <option value="USD">US Dollar (USD)</option>
@@ -218,62 +254,152 @@ const SettingsPage: React.FC = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                {t('language')}
+              </label>
               <div className="relative">
-                <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Globe className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
                 <select
                   value={settings.preferences.language}
                   onChange={(e) => updateSetting('preferences', 'language', e.target.value)}
-                  className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={`w-full pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    isDark 
+                      ? 'bg-dark-700 border-dark-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 >
                   <option value="id">Bahasa Indonesia</option>
                   <option value="en">English</option>
-                  <option value="zh">中文</option>
                 </select>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Theme</label>
-            <div className="flex space-x-4">
-              {['light', 'dark', 'auto'].map((theme) => (
-                <label key={theme} className="flex items-center">
-                  <input
-                    type="radio"
-                    name="theme"
-                    value={theme}
-                    checked={settings.preferences.theme === theme}
-                    onChange={(e) => updateSetting('preferences', 'theme', e.target.value)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                  />
-                  <span className="ml-2 text-sm text-gray-700 capitalize">{theme}</span>
-                </label>
-              ))}
+            <label className={`block text-sm font-medium mb-3 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              {t('theme')}
+            </label>
+            <div className="grid grid-cols-3 gap-4">
+              {themeOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <label key={option.value} className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="theme"
+                      value={option.value}
+                      checked={settings.preferences.theme === option.value}
+                      onChange={(e) => updateSetting('preferences', 'theme', e.target.value)}
+                      className="sr-only"
+                    />
+                    <div className={`flex-1 flex items-center justify-center p-3 rounded-lg border-2 transition-colors ${
+                      settings.preferences.theme === option.value
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : isDark
+                          ? 'border-dark-600 hover:border-dark-500 bg-dark-700'
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}>
+                      <Icon className={`h-5 w-5 mr-2 ${
+                        settings.preferences.theme === option.value 
+                          ? 'text-blue-600' 
+                          : isDark ? 'text-gray-400' : 'text-gray-500'
+                      }`} />
+                      <span className={`text-sm font-medium ${
+                        settings.preferences.theme === option.value 
+                          ? 'text-blue-600' 
+                          : isDark ? 'text-white' : 'text-gray-700'
+                      }`}>
+                        {option.label}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Privacy & Security */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
+      {/* Notification Settings */}
+      <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`p-6 border-b transition-colors duration-300 ${
+          isDark ? 'border-dark-700' : 'border-gray-200'
+        }`}>
           <div className="flex items-center">
-            <Shield className="h-5 w-5 text-gray-500 mr-3" />
-            <h3 className="text-lg font-semibold text-gray-900">Privacy & Security</h3>
+            <Bell className={`h-5 w-5 mr-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t('notifications')}
+            </h3>
           </div>
         </div>
         
         <div className="p-6 space-y-4">
           {[
-            { key: 'dataSharing', label: 'Data Sharing', description: 'Share anonymized data for research' },
-            { key: 'analytics', label: 'Analytics', description: 'Help improve the app with usage analytics' },
-            { key: 'marketing', label: 'Marketing Communications', description: 'Receive product updates and offers' }
-          ].map((privacy) => (
-            <div key={privacy.key} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg">
+            { key: 'email', label: t('email_notifications'), description: t('receive_email_updates') },
+            { key: 'whatsapp', label: t('whatsapp_notifications'), description: t('get_whatsapp_alerts') },
+            { key: 'pushNotifications', label: t('push_notifications'), description: t('browser_notifications') },
+            { key: 'lowStockAlerts', label: t('low_stock_alerts'), description: t('when_items_low') },
+            { key: 'budgetAlerts', label: t('budget_alerts'), description: t('approaching_budget') },
+            { key: 'monthlyReports', label: t('monthly_reports'), description: t('automated_summaries') }
+          ].map((notification) => (
+            <div key={notification.key} className={`flex items-center justify-between p-4 rounded-lg transition-colors ${
+              isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
+            }`}>
               <div className="flex-1">
-                <h4 className="font-medium text-gray-900">{privacy.label}</h4>
-                <p className="text-sm text-gray-500">{privacy.description}</p>
+                <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {notification.label}
+                </h4>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {notification.description}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.notifications[notification.key as keyof typeof settings.notifications]}
+                  onChange={(e) => updateSetting('notifications', notification.key, e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Privacy & Security */}
+      <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`p-6 border-b transition-colors duration-300 ${
+          isDark ? 'border-dark-700' : 'border-gray-200'
+        }`}>
+          <div className="flex items-center">
+            <Shield className={`h-5 w-5 mr-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t('privacy_security')}
+            </h3>
+          </div>
+        </div>
+        
+        <div className="p-6 space-y-4">
+          {[
+            { key: 'dataSharing', label: t('data_sharing'), description: t('share_anonymized_data') },
+            { key: 'analytics', label: t('analytics'), description: t('help_improve_app') },
+            { key: 'marketing', label: t('marketing_communications'), description: t('receive_product_updates') }
+          ].map((privacy) => (
+            <div key={privacy.key} className={`flex items-center justify-between p-4 rounded-lg transition-colors ${
+              isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
+            }`}>
+              <div className="flex-1">
+                <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {privacy.label}
+                </h4>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {privacy.description}
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -282,7 +408,7 @@ const SettingsPage: React.FC = () => {
                   onChange={(e) => updateSetting('privacy', privacy.key, e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
               </label>
             </div>
           ))}
@@ -290,30 +416,48 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* Account Actions */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
+        isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
+      }`}>
         <div className="p-6 space-y-4">
-          <button className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 rounded-lg transition-colors">
+          <button className={`w-full flex items-center justify-between p-4 text-left rounded-lg transition-colors ${
+            isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
+          }`}>
             <div>
-              <h4 className="font-medium text-gray-900">Change Password</h4>
-              <p className="text-sm text-gray-500">Update your account password</p>
+              <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {t('change_password')}
+              </h4>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {t('update_account_password')}
+              </p>
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+            <ChevronRight className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
           </button>
 
-          <button className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 rounded-lg transition-colors">
+          <button className={`w-full flex items-center justify-between p-4 text-left rounded-lg transition-colors ${
+            isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
+          }`}>
             <div>
-              <h4 className="font-medium text-gray-900">Export Data</h4>
-              <p className="text-sm text-gray-500">Download your financial data</p>
+              <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {t('export_data')}
+              </h4>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {t('download_financial_data')}
+              </p>
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+            <ChevronRight className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
           </button>
 
-          <button className="w-full flex items-center justify-between p-4 text-left hover:bg-red-50 rounded-lg transition-colors text-red-600">
+          <button className={`w-full flex items-center justify-between p-4 text-left rounded-lg transition-colors text-red-600 ${
+            isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'
+          }`}>
             <div>
-              <h4 className="font-medium">Delete Account</h4>
-              <p className="text-sm text-red-500">Permanently delete your account and data</p>
+              <h4 className="font-medium">{t('delete_account')}</h4>
+              <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-500'}`}>
+                {t('permanently_delete')}
+              </p>
             </div>
-            <ChevronRight className="h-5 w-5 text-red-400" />
+            <ChevronRight className={`h-5 w-5 ${isDark ? 'text-red-400' : 'text-red-400'}`} />
           </button>
         </div>
       </div>

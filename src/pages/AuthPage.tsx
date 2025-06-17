@@ -76,7 +76,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
             <User className="h-8 w-8 text-white" />
           </div>
           <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Family Finance AI
+            Maya - Family
           </h1>
           <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
             Smart financial management for families

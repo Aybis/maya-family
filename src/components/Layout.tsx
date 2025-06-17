@@ -36,7 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
             <User className="h-8 w-8 text-blue-600 mr-3" />
             <div>
               <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Family Finance
+                Maya - Family
               </h1>
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 AI Powered
@@ -79,7 +79,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
             <div className="flex items-center">
               <User className="h-6 w-6 text-blue-600 mr-2" />
               <h1 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Family Finance AI
+                Maya - Family
               </h1>
             </div>
           </div>

@@ -68,18 +68,18 @@ const TransactionsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="min-w-0 flex-1">
+          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {t('transactions')}
           </h1>
-          <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
+          <p className={`text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
             Track and manage all your financial transactions
           </p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="mt-4 sm:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center shadow-lg"
+          className="w-full sm:w-auto bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center shadow-lg"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Transaction
@@ -87,10 +87,10 @@ const TransactionsPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+      <div className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-colors duration-300 ${
         isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
       }`}>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-4">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
@@ -113,7 +113,7 @@ const TransactionsPage: React.FC = () => {
             <select
               value={selectedFilter}
               onChange={(e) => setSelectedFilter(e.target.value)}
-              className={`pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+              className={`w-full lg:w-auto pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                 isDark 
                   ? 'bg-dark-700 border-dark-600 text-white' 
                   : 'bg-white border-gray-300 text-gray-900'
@@ -128,7 +128,7 @@ const TransactionsPage: React.FC = () => {
           {/* Date Filter */}
           <div className="relative">
             <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
-            <select className={`pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+            <select className={`w-full lg:w-auto pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
               isDark 
                 ? 'bg-dark-700 border-dark-600 text-white' 
                 : 'bg-white border-gray-300 text-gray-900'
@@ -143,56 +143,56 @@ const TransactionsPage: React.FC = () => {
       </div>
 
       {/* Transaction Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+        <div className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-colors duration-300 ${
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
         }`}>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="min-w-0 flex-1">
               <p className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                 Total Income
               </p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-xl sm:text-2xl font-bold text-green-600 truncate">
                 {formatCurrency(totalIncome)}
               </p>
             </div>
-            <div className={`p-3 rounded-xl ${isDark ? 'bg-green-900/30' : 'bg-green-100'}`}>
+            <div className={`p-3 rounded-xl flex-shrink-0 ml-2 ${isDark ? 'bg-green-900/30' : 'bg-green-100'}`}>
               <ArrowUp className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+        <div className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-colors duration-300 ${
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
         }`}>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="min-w-0 flex-1">
               <p className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                 Total Expenses
               </p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-xl sm:text-2xl font-bold text-red-600 truncate">
                 {formatCurrency(totalExpenses)}
               </p>
             </div>
-            <div className={`p-3 rounded-xl ${isDark ? 'bg-red-900/30' : 'bg-red-100'}`}>
+            <div className={`p-3 rounded-xl flex-shrink-0 ml-2 ${isDark ? 'bg-red-900/30' : 'bg-red-100'}`}>
               <ArrowDown className="h-6 w-6 text-red-600" />
             </div>
           </div>
         </div>
 
-        <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+        <div className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-colors duration-300 ${
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
         }`}>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="min-w-0 flex-1">
               <p className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                 Net Balance
               </p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-xl sm:text-2xl font-bold text-blue-600 truncate">
                 {formatCurrency(netBalance)}
               </p>
             </div>
-            <div className={`p-3 rounded-xl ${isDark ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
+            <div className={`p-3 rounded-xl flex-shrink-0 ml-2 ${isDark ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
               <CreditCard className="h-6 w-6 text-blue-600" />
             </div>
           </div>
@@ -203,7 +203,7 @@ const TransactionsPage: React.FC = () => {
       <div className={`rounded-xl shadow-sm border transition-colors duration-300 ${
         isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
       }`}>
-        <div className={`p-6 border-b transition-colors duration-300 ${
+        <div className={`p-4 sm:p-6 border-b transition-colors duration-300 ${
           isDark ? 'border-dark-700' : 'border-gray-200'
         }`}>
           <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -214,31 +214,31 @@ const TransactionsPage: React.FC = () => {
         <div className={`divide-y ${isDark ? 'divide-dark-700' : 'divide-gray-200'}`}>
           {filteredTransactions.length > 0 ? (
             filteredTransactions.map((transaction) => (
-              <div key={transaction.id} className={`p-6 transition-colors group ${
+              <div key={transaction.id} className={`p-4 sm:p-6 transition-colors group ${
                 isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
               }`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-full ${
+                  <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                    <div className={`p-2 sm:p-3 rounded-full flex-shrink-0 ${
                       transaction.type === 'income' 
                         ? isDark ? 'bg-green-900/30' : 'bg-green-100'
                         : isDark ? 'bg-red-900/30' : 'bg-red-100'
                     }`}>
                       {transaction.type === 'income' ? (
-                        <ArrowUp className="h-5 w-5 text-green-600" />
+                        <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                       ) : (
-                        <ArrowDown className="h-5 w-5 text-red-600" />
+                        <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                       )}
                     </div>
-                    <div>
-                      <h4 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    <div className="min-w-0 flex-1">
+                      <h4 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {transaction.description}
                       </h4>
-                      <div className="flex items-center space-x-2 mt-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mt-1">
                         <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                           {transaction.category}
                         </span>
-                        <span className={isDark ? 'text-gray-600' : 'text-gray-300'}>•</span>
+                        <span className={`hidden sm:inline ${isDark ? 'text-gray-600' : 'text-gray-300'}`}>•</span>
                         <span className={`text-sm flex items-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                           <span className="mr-1">{getPaymentMethodIcon(transaction.paymentMethod)}</span>
                           {transaction.paymentMethod}
@@ -246,14 +246,14 @@ const TransactionsPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
                     <div className="text-right">
-                      <p className={`text-lg font-bold ${
+                      <p className={`text-sm sm:text-lg font-bold ${
                         transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                       </p>
-                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                         {new Date(transaction.date).toLocaleDateString('id-ID', {
                           year: 'numeric',
                           month: 'long',
@@ -261,28 +261,28 @@ const TransactionsPage: React.FC = () => {
                         })}
                       </p>
                     </div>
-                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex space-x-1 sm:space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleEdit(transaction)}
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`p-1 sm:p-2 rounded-lg transition-colors ${
                           isDark 
                             ? 'text-blue-400 hover:bg-blue-900/30' 
                             : 'text-blue-600 hover:bg-blue-50'
                         }`}
                         title="Edit transaction"
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(transaction.id)}
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`p-1 sm:p-2 rounded-lg transition-colors ${
                           isDark 
                             ? 'text-red-400 hover:bg-red-900/30' 
                             : 'text-red-600 hover:bg-red-50'
                         }`}
                         title="Delete transaction"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                     </div>
                   </div>
@@ -290,11 +290,11 @@ const TransactionsPage: React.FC = () => {
               </div>
             ))
           ) : (
-            <div className="p-12 text-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+            <div className="p-8 sm:p-12 text-center">
+              <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
                 isDark ? 'bg-dark-700' : 'bg-gray-100'
               }`}>
-                <Search className={`h-8 w-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                <Search className={`h-6 w-6 sm:h-8 sm:w-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
               </div>
               <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 No transactions found

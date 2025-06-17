@@ -26,16 +26,16 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
       isDark ? 'bg-dark-900' : 'bg-gray-50'
     }`}>
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:z-50">
         <div className={`flex flex-col flex-grow shadow-lg transition-colors duration-300 ${
           isDark ? 'bg-dark-800 border-r border-dark-700' : 'bg-white'
         }`}>
           <div className={`flex items-center flex-shrink-0 px-6 py-6 border-b transition-colors duration-300 ${
             isDark ? 'border-dark-700' : 'border-gray-200'
           }`}>
-            <User className="h-8 w-8 text-blue-600 mr-3" />
-            <div>
-              <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <User className="h-8 w-8 text-blue-600 mr-3 flex-shrink-0" />
+            <div className="min-w-0">
+              <h1 className={`text-xl font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Maya - Family
               </h1>
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -43,7 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
               </p>
             </div>
           </div>
-          <nav className="mt-6 flex-1 px-4 space-y-2">
+          <nav className="mt-6 flex-1 px-4 space-y-2 overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -60,8 +60,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.label}
+                  <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                  <span className="truncate">{item.label}</span>
                 </button>
               );
             })}
@@ -76,9 +76,9 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
         }`}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <User className="h-6 w-6 text-blue-600 mr-2" />
-              <h1 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <div className="flex items-center min-w-0">
+              <User className="h-6 w-6 text-blue-600 mr-2 flex-shrink-0" />
+              <h1 className={`text-lg font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Maya - Family
               </h1>
             </div>
@@ -86,22 +86,22 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 p-4 lg:p-6 xl:p-8 pb-20 lg:pb-8">
           {children}
         </main>
 
         {/* Mobile Bottom Navigation */}
-        <div className={`lg:hidden fixed bottom-0 left-0 right-0 border-t px-4 py-2 transition-colors duration-300 ${
+        <div className={`lg:hidden fixed bottom-0 left-0 right-0 border-t px-2 py-2 transition-colors duration-300 z-50 ${
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-200'
         }`}>
-          <div className="flex justify-around">
+          <div className="flex justify-around max-w-md mx-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.id}
                   onClick={() => onPageChange(item.id)}
-                  className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 ${
+                  className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 min-w-0 flex-1 ${
                     currentPage === item.id
                       ? 'text-blue-600'
                       : isDark
@@ -109,8 +109,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
                         : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  <Icon className="h-5 w-5 mb-1" />
-                  <span className="text-xs font-medium">{item.label}</span>
+                  <Icon className="h-5 w-5 mb-1 flex-shrink-0" />
+                  <span className="text-xs font-medium truncate w-full text-center">{item.label}</span>
                 </button>
               );
             })}

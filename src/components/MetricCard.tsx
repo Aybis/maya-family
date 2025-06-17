@@ -38,27 +38,27 @@ const MetricCard: React.FC<MetricCardProps> = ({
   };
 
   return (
-    <div className={`rounded-xl shadow-sm border p-6 transition-all duration-300 ${
+    <div className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-all duration-300 ${
       isDark 
         ? 'bg-dark-800 border-dark-700 hover:shadow-lg hover:shadow-dark-900/20' 
         : 'bg-white border-gray-100 hover:shadow-md'
     }`}>
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+        <div className="flex-1 min-w-0">
+          <p className={`text-xs sm:text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
             {title}
           </p>
-          <p className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <p className={`text-lg sm:text-2xl font-bold mb-2 truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {value}
           </p>
           {change && (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${getChangeColor()}`}>
+            <span className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${getChangeColor()}`}>
               {change}
             </span>
           )}
         </div>
-        <div className={`p-3 rounded-xl transition-colors ${getIconBgColor()}`}>
-          <Icon className={`h-6 w-6 ${iconColor}`} />
+        <div className={`p-2 sm:p-3 rounded-xl transition-colors flex-shrink-0 ml-2 ${getIconBgColor()}`}>
+          <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${iconColor}`} />
         </div>
       </div>
     </div>

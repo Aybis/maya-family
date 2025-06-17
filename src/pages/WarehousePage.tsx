@@ -74,23 +74,23 @@ const WarehousePage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="min-w-0 flex-1">
+          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {t('warehouse')} Inventory
           </h1>
-          <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
+          <p className={`text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
             Monitor household items and stock levels
           </p>
         </div>
-        <div className="flex gap-3 mt-4 sm:mt-0">
-          <button className="bg-amber-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-amber-700 transition-colors flex items-center shadow-lg">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button className="w-full sm:w-auto bg-amber-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-amber-700 transition-colors flex items-center justify-center shadow-lg">
             <Bell className="h-4 w-4 mr-2" />
             Send Reminders
           </button>
           <button 
             onClick={() => setShowAddForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center shadow-lg"
+            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center shadow-lg"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Item
@@ -100,16 +100,16 @@ const WarehousePage: React.FC = () => {
 
       {/* Alert Summary */}
       {lowStockItems.length > 0 && (
-        <div className={`border rounded-xl p-6 transition-colors duration-300 ${
+        <div className={`border rounded-xl p-4 sm:p-6 transition-colors duration-300 ${
           isDark 
             ? 'bg-red-900/20 border-red-800' 
             : 'bg-red-50 border-red-200'
         }`}>
           <div className="flex items-start">
-            <AlertTriangle className={`h-6 w-6 mt-1 flex-shrink-0 ${
+            <AlertTriangle className={`h-5 w-5 sm:h-6 sm:w-6 mt-1 flex-shrink-0 ${
               isDark ? 'text-red-400' : 'text-red-600'
             }`} />
-            <div className="ml-3 flex-1">
+            <div className="ml-3 flex-1 min-w-0">
               <h3 className={`text-lg font-semibold mb-2 ${
                 isDark ? 'text-red-300' : 'text-red-900'
               }`}>
@@ -146,10 +146,10 @@ const WarehousePage: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+      <div className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-colors duration-300 ${
         isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
       }`}>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-4">
           <div className="flex-1 relative">
             <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
             <input
@@ -169,7 +169,7 @@ const WarehousePage: React.FC = () => {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className={`pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+              className={`w-full lg:w-auto pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                 isDark 
                   ? 'bg-dark-700 border-dark-600 text-white' 
                   : 'bg-white border-gray-300 text-gray-900'
@@ -187,7 +187,7 @@ const WarehousePage: React.FC = () => {
 
       {/* Add Item Form */}
       {showAddForm && (
-        <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+        <div className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-colors duration-300 ${
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
         }`}>
           <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -287,19 +287,19 @@ const WarehousePage: React.FC = () => {
       )}
 
       {/* Inventory Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
         {filteredItems.map((item) => {
           const stockStatus = getStockStatus(item.currentStock, item.minStock);
           const isEditing = editingItem?.id === item.id;
           
           return (
-            <div key={item.id} className={`rounded-xl shadow-sm border p-6 transition-all duration-300 group ${
+            <div key={item.id} className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-all duration-300 group ${
               isDark 
                 ? 'bg-dark-800 border-dark-700 hover:shadow-lg hover:shadow-dark-900/20' 
                 : 'bg-white border-gray-100 hover:shadow-md'
             }`}>
               <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {isEditing ? (
                     <input
                       type="text"
@@ -312,7 +312,7 @@ const WarehousePage: React.FC = () => {
                       onBlur={(e) => handleSaveEdit({ ...item, name: e.target.value })}
                     />
                   ) : (
-                    <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    <h3 className={`font-semibold mb-1 truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {item.name}
                     </h3>
                   )}
@@ -320,7 +320,7 @@ const WarehousePage: React.FC = () => {
                     {item.category}
                   </p>
                 </div>
-                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
                   <button
                     onClick={() => handleEdit(item)}
                     className={`p-1 rounded transition-colors ${
@@ -416,13 +416,13 @@ const WarehousePage: React.FC = () => {
       </div>
 
       {filteredItems.length === 0 && (
-        <div className={`rounded-xl shadow-sm border p-12 text-center transition-colors duration-300 ${
+        <div className={`rounded-xl shadow-sm border p-8 sm:p-12 text-center transition-colors duration-300 ${
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
         }`}>
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+          <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
             isDark ? 'bg-dark-700' : 'bg-gray-100'
           }`}>
-            <Package className={`h-8 w-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+            <Package className={`h-6 w-6 sm:h-8 sm:w-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
           </div>
           <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             No items found

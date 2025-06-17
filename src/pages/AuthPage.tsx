@@ -18,9 +18,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   };
 
   const socialLogins = [
-    { name: 'Google', icon: '🔍', color: 'bg-red-500 hover:bg-red-600' },
-    { name: 'Apple', icon: '🍎', color: 'bg-gray-900 hover:bg-gray-800' },
-    { name: 'GitHub', icon: '🐙', color: 'bg-gray-800 hover:bg-gray-700' }
+    { name: 'Google', icon: '🔍', color: 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300' },
+    { name: 'Apple', icon: '🍎', color: 'bg-black hover:bg-gray-900 text-white border border-black' },
+    { name: 'GitHub', icon: '🐙', color: 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-800' }
   ];
 
   return (
@@ -28,7 +28,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
       <div className="w-full max-w-md">
         {/* Logo Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
             <User className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Family Finance AI</h1>
@@ -37,37 +37,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
 
         {/* Auth Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="mb-6">
+          <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">Welcome back</h2>
             <p className="text-gray-600">Sign in to your account to continue</p>
           </div>
 
-          {/* Social Login Buttons */}
-          <div className="space-y-3 mb-6">
-            {socialLogins.map((social) => (
-              <button
-                key={social.name}
-                onClick={onLogin}
-                className={`w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-white font-medium transition-colors duration-200 ${social.color}`}
-              >
-                <span className="mr-3 text-lg">{social.icon}</span>
-                Continue with {social.name}
-              </button>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative bg-white px-4">
-              <span className="text-sm text-gray-500">Or continue with email</span>
-            </div>
-          </div>
-
-          {/* Email/Password Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email/Password Form - Primary */}
+          <form onSubmit={handleSubmit} className="space-y-6 mb-8">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
               <div className="relative">
@@ -98,7 +74,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -110,23 +86,47 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 <input type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                 <span className="ml-2 text-sm text-gray-600">Remember me</span>
               </label>
-              <button type="button" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
+              <button type="button" className="text-sm text-blue-600 hover:text-blue-500 font-medium transition-colors">
                 Forgot password?
               </button>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all duration-200 transform hover:scale-[1.02]"
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
             >
               Sign In
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          {/* Divider */}
+          <div className="relative flex items-center justify-center mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative bg-white px-4">
+              <span className="text-sm text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Social Login Buttons - Secondary */}
+          <div className="space-y-3 mb-6">
+            {socialLogins.map((social) => (
+              <button
+                key={social.name}
+                onClick={onLogin}
+                className={`w-full flex items-center justify-center px-4 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-[1.02] ${social.color}`}
+              >
+                <span className="mr-3 text-lg">{social.icon}</span>
+                Continue with {social.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <button className="text-blue-600 hover:text-blue-500 font-medium">
+              <button className="text-blue-600 hover:text-blue-500 font-medium transition-colors">
                 Sign up
               </button>
             </p>
@@ -137,9 +137,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         <div className="text-center mt-8">
           <p className="text-xs text-gray-500">
             By signing in, you agree to our{' '}
-            <button className="text-blue-600 hover:text-blue-500">Terms of Service</button>
+            <button className="text-blue-600 hover:text-blue-500 transition-colors">Terms of Service</button>
             {' '}and{' '}
-            <button className="text-blue-600 hover:text-blue-500">Privacy Policy</button>
+            <button className="text-blue-600 hover:text-blue-500 transition-colors">Privacy Policy</button>
           </p>
         </div>
       </div>

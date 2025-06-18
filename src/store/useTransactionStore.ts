@@ -19,6 +19,7 @@ interface TransactionStore {
   transactions: Transaction[];
   loading: boolean;
   error: string | null;
+  initialized: boolean;
   
   // Actions
   fetchTransactions: () => Promise<void>;
@@ -26,17 +27,41 @@ interface TransactionStore {
   updateTransaction: (id: string, transaction: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   
-  // Computed values
+  // Computed values with null safety
   getTransactionsByCategory: (category: string) => Transaction[];
   getTotalIncome: () => number;
   getTotalExpenses: () => number;
   getNetBalance: () => number;
+  getTransactionCount: () => number;
+  hasTransactions: () => boolean;
   
   // Local state management
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+  reset: () => void;
 }
+
+const defaultTransactions: Transaction[] = [
+  {
+    id: 'default-1',
+    type: 'income',
+    amount: 5000000,
+    category: 'Salary',
+    description: 'Monthly salary',
+    paymentMethod: 'Bank Transfer',
+    date: new Date().toISOString().split('T')[0]
+  },
+  {
+    id: 'default-2',
+    type: 'expense',
+    amount: 250000,
+    category: 'Food',
+    description: 'Groceries at Supermarket',
+    paymentMethod: 'QRIS',
+    date: new Date().toISOString().split('T')[0]
+  }
+];
 
 export const useTransactionStore = create<TransactionStore>()(
   persist(
@@ -44,35 +69,97 @@ export const useTransactionStore = create<TransactionStore>()(
       transactions: [],
       loading: false,
       error: null,
+      initialized: false,
 
       // API Actions
       fetchTransactions: async () => {
         set({ loading: true, error: null });
         try {
           const transactions = await apiService.getTransactions();
-          set({ transactions, loading: false });
+          
+          // Handle null or empty response
+          const validTransactions = Array.isArray(transactions) && transactions.length > 0 
+            ? transactions.filter(t => t && typeof t === 'object' && t.id)
+            : [];
+
+          set({ 
+            transactions: validTransactions, 
+            loading: false, 
+            initialized: true 
+          });
+
+          // If no valid transactions, try fallback
+          if (validTransactions.length === 0) {
+            await get().tryFallbackData();
+          }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Failed to fetch transactions';
-          set({ error: errorMessage, loading: false });
+          set({ error: errorMessage, loading: false, initialized: true });
           
-          // Fallback to dummy data if API fails
-          try {
-            const dummyTransactions = await apiService.getDummyTransactions();
-            set({ transactions: dummyTransactions, error: null });
-          } catch (dummyError) {
-            console.error('Failed to fetch dummy data:', dummyError);
+          // Always try fallback on error
+          await get().tryFallbackData();
+        }
+      },
+
+      tryFallbackData: async () => {
+        try {
+          // Try dummy API first
+          const dummyTransactions = await apiService.getDummyTransactions();
+          const validDummyTransactions = Array.isArray(dummyTransactions) && dummyTransactions.length > 0
+            ? dummyTransactions.filter(t => t && typeof t === 'object' && t.id)
+            : [];
+
+          if (validDummyTransactions.length > 0) {
+            set({ 
+              transactions: validDummyTransactions, 
+              error: 'Using demo data - API unavailable' 
+            });
+          } else {
+            // Final fallback to default data
+            set({ 
+              transactions: defaultTransactions, 
+              error: 'Using default data - API and demo data unavailable' 
+            });
           }
+        } catch (dummyError) {
+          console.error('Dummy API also failed:', dummyError);
+          // Use default transactions as final fallback
+          set({ 
+            transactions: defaultTransactions, 
+            error: 'Using default data - All APIs unavailable' 
+          });
         }
       },
 
       addTransaction: async (transaction) => {
+        // Validate input
+        if (!transaction || typeof transaction !== 'object') {
+          set({ error: 'Invalid transaction data' });
+          return;
+        }
+
+        if (!transaction.amount || transaction.amount <= 0) {
+          set({ error: 'Transaction amount must be greater than 0' });
+          return;
+        }
+
+        if (!transaction.description?.trim()) {
+          set({ error: 'Transaction description is required' });
+          return;
+        }
+
         set({ loading: true, error: null });
         try {
           const newTransaction = await apiService.createTransaction(transaction);
-          set((state) => ({
-            transactions: [newTransaction, ...state.transactions],
-            loading: false,
-          }));
+          
+          if (newTransaction && newTransaction.id) {
+            set((state) => ({
+              transactions: [newTransaction, ...state.transactions],
+              loading: false,
+            }));
+          } else {
+            throw new Error('Invalid response from server');
+          }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Failed to add transaction';
           set({ error: errorMessage, loading: false });
@@ -80,25 +167,41 @@ export const useTransactionStore = create<TransactionStore>()(
           // Fallback to local storage
           const localTransaction: Transaction = {
             ...transaction,
-            id: Date.now().toString(),
+            id: `local-${Date.now()}`,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
+          
           set((state) => ({
             transactions: [localTransaction, ...state.transactions],
-            error: null,
+            error: 'Transaction saved locally - API unavailable',
           }));
         }
       },
 
       updateTransaction: async (id, updatedTransaction) => {
+        if (!id || !updatedTransaction || typeof updatedTransaction !== 'object') {
+          set({ error: 'Invalid update data' });
+          return;
+        }
+
+        const existingTransaction = get().transactions.find(t => t.id === id);
+        if (!existingTransaction) {
+          set({ error: 'Transaction not found' });
+          return;
+        }
+
         set({ loading: true, error: null });
         try {
-          // Note: API doesn't have update endpoint, so we'll handle locally
+          // API doesn't have update endpoint, handle locally
           set((state) => ({
             transactions: state.transactions.map((transaction) =>
               transaction.id === id 
-                ? { ...transaction, ...updatedTransaction, updatedAt: new Date().toISOString() }
+                ? { 
+                    ...transaction, 
+                    ...updatedTransaction, 
+                    updatedAt: new Date().toISOString() 
+                  }
                 : transaction
             ),
             loading: false,
@@ -110,9 +213,20 @@ export const useTransactionStore = create<TransactionStore>()(
       },
 
       deleteTransaction: async (id) => {
+        if (!id) {
+          set({ error: 'Invalid transaction ID' });
+          return;
+        }
+
+        const existingTransaction = get().transactions.find(t => t.id === id);
+        if (!existingTransaction) {
+          set({ error: 'Transaction not found' });
+          return;
+        }
+
         set({ loading: true, error: null });
         try {
-          // Note: API doesn't have delete endpoint, so we'll handle locally
+          // API doesn't have delete endpoint, handle locally
           set((state) => ({
             transactions: state.transactions.filter((transaction) => transaction.id !== id),
             loading: false,
@@ -123,39 +237,63 @@ export const useTransactionStore = create<TransactionStore>()(
         }
       },
 
-      // Computed values
+      // Computed values with null safety
       getTransactionsByCategory: (category) => {
-        return get().transactions.filter((transaction) => transaction.category === category);
+        const transactions = get().transactions || [];
+        if (!category || typeof category !== 'string') return [];
+        return transactions.filter((transaction) => 
+          transaction && transaction.category === category
+        );
       },
 
       getTotalIncome: () => {
-        return get().transactions
-          .filter((transaction) => transaction.type === 'income')
-          .reduce((sum, transaction) => sum + transaction.amount, 0);
+        const transactions = get().transactions || [];
+        return transactions
+          .filter((transaction) => transaction && transaction.type === 'income' && typeof transaction.amount === 'number')
+          .reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
       },
 
       getTotalExpenses: () => {
-        return get().transactions
-          .filter((transaction) => transaction.type === 'expense')
-          .reduce((sum, transaction) => sum + transaction.amount, 0);
+        const transactions = get().transactions || [];
+        return transactions
+          .filter((transaction) => transaction && transaction.type === 'expense' && typeof transaction.amount === 'number')
+          .reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
       },
 
       getNetBalance: () => {
-        return get().transactions.reduce(
-          (sum, transaction) => sum + (transaction.type === 'income' ? transaction.amount : -transaction.amount),
-          0
-        );
+        const transactions = get().transactions || [];
+        return transactions.reduce((sum, transaction) => {
+          if (!transaction || typeof transaction.amount !== 'number') return sum;
+          return sum + (transaction.type === 'income' ? transaction.amount : -transaction.amount);
+        }, 0);
+      },
+
+      getTransactionCount: () => {
+        const transactions = get().transactions || [];
+        return transactions.filter(t => t && t.id).length;
+      },
+
+      hasTransactions: () => {
+        const transactions = get().transactions || [];
+        return transactions.length > 0;
       },
 
       // Local state management
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
+      reset: () => set({ 
+        transactions: [], 
+        loading: false, 
+        error: null, 
+        initialized: false 
+      }),
     }),
     {
       name: 'transaction-storage',
       partialize: (state) => ({ 
-        transactions: state.transactions 
+        transactions: state.transactions || [],
+        initialized: state.initialized
       }),
     }
   )

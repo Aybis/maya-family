@@ -7,6 +7,7 @@ import StockWarning from '../components/StockWarning';
 import TransactionModal from '../components/TransactionModal';
 import { useTransactionStore } from '../store/useTransactionStore';
 import { useWarehouseStore } from '../store/useWarehouseStore';
+import { safeArray, safeSlice, isEmpty } from '../utils/safeArrayUtils';
 
 const DashboardPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +23,8 @@ const DashboardPage: React.FC = () => {
     fetchTransactions,
     getTotalIncome,
     getTotalExpenses,
-    getNetBalance 
+    getNetBalance,
+    getRecentTransactions
   } = useTransactionStore();
   
   const { 
@@ -46,12 +48,14 @@ const DashboardPage: React.FC = () => {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0
-    }).format(amount);
+    }).format(amount || 0);
   };
 
-  const recentTransactions = transactions.slice(0, 5);
+  // Safe recent transactions with fallback
+  const recentTransactions = getRecentTransactions(5);
   const monthlyBudget = 6000000;
   
+  // Safe expense categories calculation
   const expenseCategories = [
     { name: 'Food', amount: 250000, percentage: 55 },
     { name: 'Transportation', amount: 50000, percentage: 11 },
@@ -238,7 +242,7 @@ const DashboardPage: React.FC = () => {
                     className={`h-2 rounded-full transition-all duration-300 ${
                       index === 0 ? 'bg-blue-500' : index === 1 ? 'bg-green-500' : 'bg-purple-500'
                     }`}
-                    style={{ width: `${category.percentage}%` }}
+                    style={{ width: `${Math.max(5, category.percentage)}%` }}
                   />
                 </div>
               </div>
@@ -265,6 +269,26 @@ const DashboardPage: React.FC = () => {
             <RefreshCw className="h-6 w-6 animate-spin text-blue-600 mr-2" />
             <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Loading transactions...</span>
           </div>
+        ) : isEmpty(recentTransactions) ? (
+          <div className="text-center py-8">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
+              isDark ? 'bg-dark-700' : 'bg-gray-100'
+            }`}>
+              <TrendingUp className={`h-6 w-6 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+            </div>
+            <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              No transactions yet
+            </h3>
+            <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              Start by adding your first transaction
+            </p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Add Transaction
+            </button>
+          </div>
         ) : (
           <div className="space-y-3 sm:space-y-4">
             {recentTransactions.map((transaction) => (
@@ -285,10 +309,10 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {transaction.description}
+                      {transaction.description || 'No description'}
                     </p>
                     <p className={`text-sm truncate ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {transaction.category} • {transaction.paymentMethod}
+                      {transaction.category || 'No category'} • {transaction.paymentMethod || 'No payment method'}
                     </p>
                   </div>
                 </div>
@@ -296,10 +320,10 @@ const DashboardPage: React.FC = () => {
                   <p className={`font-semibold text-sm sm:text-base ${
                     transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount || 0)}
                   </p>
                   <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {new Date(transaction.date).toLocaleDateString('id-ID')}
+                    {transaction.date ? new Date(transaction.date).toLocaleDateString('id-ID') : 'No date'}
                   </p>
                 </div>
               </div>

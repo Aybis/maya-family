@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiService } from '../services/api';
+import { safeArray, safeFilter, safeSlice, safeFind, safeNumber, safeString, isEmpty, isNotEmpty } from '../utils/safeArrayUtils';
 
 export interface WarehouseItem {
   id: string;
@@ -33,8 +34,11 @@ interface WarehouseStore {
   getLowStockItems: () => WarehouseItem[];
   getItemByName: (name: string) => WarehouseItem | undefined;
   getItemsByCategory: (category: string) => WarehouseItem[];
+  getCategories: () => string[];
   getTotalItems: () => number;
+  getTotalStockValue: () => number;
   hasItems: () => boolean;
+  getStockStatus: (item: WarehouseItem) => 'empty' | 'low' | 'good';
   
   // State management
   setLoading: (loading: boolean) => void;
@@ -62,8 +66,35 @@ const defaultItems: WarehouseItem[] = [
     unit: 'bottles',
     category: 'Food',
     lastUpdated: new Date().toISOString().split('T')[0]
+  },
+  {
+    id: 'default-3',
+    name: 'Tissue Paper',
+    currentStock: 15,
+    minStock: 5,
+    unit: 'packs',
+    category: 'Household',
+    lastUpdated: new Date().toISOString().split('T')[0]
   }
 ];
+
+const validateWarehouseItem = (item: any): item is WarehouseItem => {
+  return (
+    item &&
+    typeof item === 'object' &&
+    typeof item.id === 'string' &&
+    typeof item.name === 'string' &&
+    item.name.trim().length > 0 &&
+    typeof item.currentStock === 'number' &&
+    item.currentStock >= 0 &&
+    typeof item.minStock === 'number' &&
+    item.minStock >= 0 &&
+    typeof item.unit === 'string' &&
+    item.unit.trim().length > 0 &&
+    typeof item.category === 'string' &&
+    item.category.trim().length > 0
+  );
+};
 
 export const useWarehouseStore = create<WarehouseStore>()(
   persist(
@@ -79,17 +110,8 @@ export const useWarehouseStore = create<WarehouseStore>()(
         try {
           const items = await apiService.getWarehouseItems();
           
-          // Handle null or empty response
-          const validItems = Array.isArray(items) && items.length > 0
-            ? items.filter(item => 
-                item && 
-                typeof item === 'object' && 
-                item.id && 
-                item.name && 
-                typeof item.currentStock === 'number' &&
-                typeof item.minStock === 'number'
-              )
-            : [];
+          // Handle null or empty response with safe array operations
+          const validItems = safeFilter(items, validateWarehouseItem);
 
           set({ 
             items: validItems, 
@@ -98,7 +120,7 @@ export const useWarehouseStore = create<WarehouseStore>()(
           });
 
           // If no valid items, try fallback
-          if (validItems.length === 0) {
+          if (isEmpty(validItems)) {
             await get().tryFallbackData();
           }
         } catch (error) {
@@ -114,18 +136,9 @@ export const useWarehouseStore = create<WarehouseStore>()(
         try {
           // Try dummy API first
           const dummyItems = await apiService.getDummyWarehouse();
-          const validDummyItems = Array.isArray(dummyItems) && dummyItems.length > 0
-            ? dummyItems.filter(item => 
-                item && 
-                typeof item === 'object' && 
-                item.id && 
-                item.name &&
-                typeof item.currentStock === 'number' &&
-                typeof item.minStock === 'number'
-              )
-            : [];
+          const validDummyItems = safeFilter(dummyItems, validateWarehouseItem);
 
-          if (validDummyItems.length > 0) {
+          if (isNotEmpty(validDummyItems)) {
             set({ 
               items: validDummyItems, 
               error: 'Using demo data - API unavailable' 
@@ -148,33 +161,39 @@ export const useWarehouseStore = create<WarehouseStore>()(
       },
 
       addItem: async (item) => {
-        // Validate input
+        // Validate input with safe operations
         if (!item || typeof item !== 'object') {
           set({ error: 'Invalid item data' });
           return;
         }
 
-        if (!item.name?.trim()) {
+        const name = safeString(item.name).trim();
+        const currentStock = safeNumber(item.currentStock);
+        const minStock = safeNumber(item.minStock);
+        const unit = safeString(item.unit).trim();
+        const category = safeString(item.category).trim();
+
+        if (!name) {
           set({ error: 'Item name is required' });
           return;
         }
 
-        if (typeof item.currentStock !== 'number' || item.currentStock < 0) {
-          set({ error: 'Current stock must be a valid number' });
+        if (currentStock < 0) {
+          set({ error: 'Current stock must be a non-negative number' });
           return;
         }
 
-        if (typeof item.minStock !== 'number' || item.minStock < 0) {
-          set({ error: 'Minimum stock must be a valid number' });
+        if (minStock < 0) {
+          set({ error: 'Minimum stock must be a non-negative number' });
           return;
         }
 
-        if (!item.unit?.trim()) {
+        if (!unit) {
           set({ error: 'Unit is required' });
           return;
         }
 
-        if (!item.category?.trim()) {
+        if (!category) {
           set({ error: 'Category is required' });
           return;
         }
@@ -183,12 +202,17 @@ export const useWarehouseStore = create<WarehouseStore>()(
         try {
           const newItem = await apiService.createWarehouseItem({
             ...item,
+            name,
+            currentStock,
+            minStock,
+            unit,
+            category,
             lastUpdated: new Date().toISOString().split('T')[0],
           });
 
           if (newItem && newItem.id) {
             set((state) => ({
-              items: [...state.items, newItem],
+              items: [...safeArray(state.items), newItem],
               loading: false,
             }));
           } else {
@@ -202,13 +226,18 @@ export const useWarehouseStore = create<WarehouseStore>()(
           const localItem: WarehouseItem = {
             ...item,
             id: `local-${Date.now()}`,
+            name,
+            currentStock,
+            minStock,
+            unit,
+            category,
             lastUpdated: new Date().toISOString().split('T')[0],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
           
           set((state) => ({
-            items: [...state.items, localItem],
+            items: [...safeArray(state.items), localItem],
             error: 'Item saved locally - API unavailable',
           }));
         }
@@ -220,7 +249,8 @@ export const useWarehouseStore = create<WarehouseStore>()(
           return;
         }
 
-        const existingItem = get().items.find(item => item.id === id);
+        const items = safeArray(get().items);
+        const existingItem = safeFind(items, item => item.id === id);
         if (!existingItem) {
           set({ error: 'Item not found' });
           return;
@@ -234,7 +264,7 @@ export const useWarehouseStore = create<WarehouseStore>()(
           });
 
           set((state) => ({
-            items: state.items.map((item) =>
+            items: safeArray(state.items).map((item) =>
               item.id === id ? { ...item, ...updated } : item
             ),
             loading: false,
@@ -245,7 +275,7 @@ export const useWarehouseStore = create<WarehouseStore>()(
           
           // Fallback to local update
           set((state) => ({
-            items: state.items.map((item) =>
+            items: safeArray(state.items).map((item) =>
               item.id === id 
                 ? { 
                     ...item, 
@@ -266,7 +296,8 @@ export const useWarehouseStore = create<WarehouseStore>()(
           return;
         }
 
-        const existingItem = get().items.find(item => item.id === id);
+        const items = safeArray(get().items);
+        const existingItem = safeFind(items, item => item.id === id);
         if (!existingItem) {
           set({ error: 'Item not found' });
           return;
@@ -276,7 +307,7 @@ export const useWarehouseStore = create<WarehouseStore>()(
         try {
           // API doesn't have delete endpoint, handle locally
           set((state) => ({
-            items: state.items.filter((item) => item.id !== id),
+            items: safeFilter(state.items, (item) => item.id !== id),
             loading: false,
           }));
         } catch (error) {
@@ -286,14 +317,16 @@ export const useWarehouseStore = create<WarehouseStore>()(
       },
 
       updateStock: async (id, newStock) => {
-        if (!id || typeof newStock !== 'number' || newStock < 0) {
+        const stockValue = safeNumber(newStock);
+        if (!id || stockValue < 0) {
           set({ error: 'Invalid stock update data' });
           return;
         }
 
-        const item = get().items.find(item => item.id === id);
+        const items = safeArray(get().items);
+        const item = safeFind(items, item => item.id === id);
         if (item) {
-          await get().updateItem(id, { currentStock: newStock });
+          await get().updateItem(id, { currentStock: stockValue });
         } else {
           set({ error: 'Item not found for stock update' });
         }
@@ -301,15 +334,18 @@ export const useWarehouseStore = create<WarehouseStore>()(
 
       // Local Actions with null safety
       consumeItem: (itemName, quantity) => {
-        if (!itemName || typeof itemName !== 'string' || typeof quantity !== 'number' || quantity <= 0) {
+        const name = safeString(itemName).trim();
+        const qty = safeNumber(quantity);
+        
+        if (!name || qty <= 0) {
           set({ error: 'Invalid consume item parameters' });
           return;
         }
 
         set((state) => ({
-          items: state.items.map((item) => {
-            if (item && item.name && item.name.toLowerCase().includes(itemName.toLowerCase())) {
-              const newStock = Math.max(0, (item.currentStock || 0) - quantity);
+          items: safeArray(state.items).map((item) => {
+            if (item && item.name && item.name.toLowerCase().includes(name.toLowerCase())) {
+              const newStock = Math.max(0, safeNumber(item.currentStock) - qty);
               return {
                 ...item,
                 currentStock: newStock,
@@ -323,8 +359,8 @@ export const useWarehouseStore = create<WarehouseStore>()(
       },
 
       getLowStockItems: () => {
-        const items = get().items || [];
-        return items.filter((item) => 
+        const items = safeArray(get().items);
+        return safeFilter(items, (item) => 
           item && 
           typeof item.currentStock === 'number' && 
           typeof item.minStock === 'number' &&
@@ -333,31 +369,67 @@ export const useWarehouseStore = create<WarehouseStore>()(
       },
 
       getItemByName: (name) => {
-        if (!name || typeof name !== 'string') return undefined;
-        const items = get().items || [];
-        return items.find((item) => 
+        const searchName = safeString(name).trim().toLowerCase();
+        if (!searchName) return undefined;
+        
+        const items = safeArray(get().items);
+        return safeFind(items, (item) => 
           item && 
           item.name && 
-          item.name.toLowerCase().includes(name.toLowerCase())
+          item.name.toLowerCase().includes(searchName)
         );
       },
 
       getItemsByCategory: (category) => {
-        if (!category || typeof category !== 'string') return [];
-        const items = get().items || [];
-        return items.filter((item) => 
-          item && item.category === category
+        const searchCategory = safeString(category).trim();
+        if (!searchCategory) return [];
+        
+        const items = safeArray(get().items);
+        return safeFilter(items, (item) => 
+          item && item.category === searchCategory
         );
       },
 
+      getCategories: () => {
+        const items = safeArray(get().items);
+        const categories = new Set<string>();
+        
+        items.forEach(item => {
+          if (item && item.category) {
+            categories.add(item.category);
+          }
+        });
+        
+        return Array.from(categories).sort();
+      },
+
       getTotalItems: () => {
-        const items = get().items || [];
-        return items.filter(item => item && item.id).length;
+        const items = safeArray(get().items);
+        return safeFilter(items, item => item && item.id).length;
+      },
+
+      getTotalStockValue: () => {
+        const items = safeArray(get().items);
+        return items.reduce((total, item) => {
+          if (!item) return total;
+          return total + safeNumber(item.currentStock);
+        }, 0);
       },
 
       hasItems: () => {
-        const items = get().items || [];
+        const items = safeArray(get().items);
         return items.length > 0;
+      },
+
+      getStockStatus: (item) => {
+        if (!item) return 'empty';
+        
+        const current = safeNumber(item.currentStock);
+        const min = safeNumber(item.minStock);
+        
+        if (current === 0) return 'empty';
+        if (current <= min) return 'low';
+        return 'good';
       },
 
       // State management
@@ -374,7 +446,7 @@ export const useWarehouseStore = create<WarehouseStore>()(
     {
       name: 'warehouse-storage',
       partialize: (state) => ({ 
-        items: state.items || [],
+        items: safeArray(state.items),
         initialized: state.initialized
       }),
     }

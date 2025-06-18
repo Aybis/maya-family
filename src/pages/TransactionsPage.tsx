@@ -5,6 +5,7 @@ import { useThemeStore } from '../store/useThemeStore';
 import TransactionModal from '../components/TransactionModal';
 import EditTransactionModal from '../components/EditTransactionModal';
 import { useTransactionStore } from '../store/useTransactionStore';
+import { safeArray, safeFilter, isEmpty } from '../utils/safeArrayUtils';
 
 const TransactionsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,17 +42,25 @@ const TransactionsPage: React.FC = () => {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0
-    }).format(amount);
+    }).format(amount || 0);
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
+  // Safe filtering with null checks
+  const filteredTransactions = safeFilter(transactions, transaction => {
+    if (!transaction) return false;
+    
+    const description = transaction.description || '';
+    const category = transaction.category || '';
+    
+    const matchesSearch = description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = selectedFilter === 'all' || transaction.type === selectedFilter;
     return matchesSearch && matchesFilter;
   });
 
   const getPaymentMethodIcon = (method: string) => {
+    if (!method) return '💳';
+    
     switch (method.toLowerCase()) {
       case 'cash':
         return '💵';
@@ -275,7 +284,30 @@ const TransactionsPage: React.FC = () => {
               <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
               <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Loading transactions...</p>
             </div>
-          ) : filteredTransactions.length > 0 ? (
+          ) : isEmpty(filteredTransactions) ? (
+            <div className="p-8 sm:p-12 text-center">
+              <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                isDark ? 'bg-dark-700' : 'bg-gray-100'
+              }`}>
+                <Search className={`h-6 w-6 sm:h-8 sm:w-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+              </div>
+              <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                No transactions found
+              </h3>
+              <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                Try adjusting your search or filter criteria
+              </p>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedFilter('all');
+                }}
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : (
             filteredTransactions.map((transaction) => (
               <div key={transaction.id} className={`p-4 sm:p-6 transition-colors group ${
                 isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
@@ -295,16 +327,16 @@ const TransactionsPage: React.FC = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {transaction.description}
+                        {transaction.description || 'No description'}
                       </h4>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mt-1">
                         <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {transaction.category}
+                          {transaction.category || 'No category'}
                         </span>
                         <span className={`hidden sm:inline ${isDark ? 'text-gray-600' : 'text-gray-300'}`}>•</span>
                         <span className={`text-sm flex items-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                           <span className="mr-1">{getPaymentMethodIcon(transaction.paymentMethod)}</span>
-                          {transaction.paymentMethod}
+                          {transaction.paymentMethod || 'No payment method'}
                         </span>
                       </div>
                     </div>
@@ -314,14 +346,14 @@ const TransactionsPage: React.FC = () => {
                       <p className={`text-sm sm:text-lg font-bold ${
                         transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount || 0)}
                       </p>
                       <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {new Date(transaction.date).toLocaleDateString('id-ID', {
+                        {transaction.date ? new Date(transaction.date).toLocaleDateString('id-ID', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
-                        })}
+                        }) : 'No date'}
                       </p>
                     </div>
                     <div className="flex space-x-1 sm:space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -352,26 +384,6 @@ const TransactionsPage: React.FC = () => {
                 </div>
               </div>
             ))
-          ) : (
-            <div className="p-8 sm:p-12 text-center">
-              <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                isDark ? 'bg-dark-700' : 'bg-gray-100'
-              }`}>
-                <Search className={`h-6 w-6 sm:h-8 sm:w-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-              </div>
-              <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                No transactions found
-              </h3>
-              <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                Try adjusting your search or filter criteria
-              </p>
-              <button
-                onClick={() => setSearchTerm('')}
-                className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
-              >
-                Clear filters
-              </button>
-            </div>
           )}
         </div>
       </div>

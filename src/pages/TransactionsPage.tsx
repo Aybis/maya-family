@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Search, Filter, ArrowUp, ArrowDown, Calendar, CreditCard, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Filter, ArrowUp, ArrowDown, Calendar, CreditCard, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '../store/useThemeStore';
 import TransactionModal from '../components/TransactionModal';
@@ -16,11 +16,25 @@ const TransactionsPage: React.FC = () => {
   const { t } = useTranslation();
   const { isDark } = useThemeStore();
   
-  const transactions = useTransactionStore((state) => state.transactions);
-  const deleteTransaction = useTransactionStore((state) => state.deleteTransaction);
-  const totalIncome = useTransactionStore((state) => state.getTotalIncome());
-  const totalExpenses = useTransactionStore((state) => state.getTotalExpenses());
-  const netBalance = useTransactionStore((state) => state.getNetBalance());
+  const { 
+    transactions, 
+    loading, 
+    error,
+    fetchTransactions,
+    deleteTransaction,
+    getTotalIncome,
+    getTotalExpenses,
+    getNetBalance 
+  } = useTransactionStore();
+
+  const totalIncome = getTotalIncome();
+  const totalExpenses = getTotalExpenses();
+  const netBalance = getNetBalance();
+
+  // Fetch transactions on component mount
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -59,10 +73,14 @@ const TransactionsPage: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this transaction?')) {
-      deleteTransaction(id);
+      await deleteTransaction(id);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchTransactions();
   };
 
   return (
@@ -77,14 +95,54 @@ const TransactionsPage: React.FC = () => {
             Track and manage all your financial transactions
           </p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="w-full sm:w-auto bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center shadow-lg"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Transaction
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className={`px-4 py-3 sm:py-2 rounded-lg font-medium transition-colors flex items-center justify-center ${
+              isDark 
+                ? 'bg-dark-600 text-gray-300 hover:bg-dark-500 disabled:opacity-50' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50'
+            }`}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center shadow-lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Transaction
+          </button>
+        </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className={`border rounded-xl p-4 transition-colors duration-300 ${
+          isDark 
+            ? 'bg-red-900/20 border-red-800 text-red-400' 
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Failed to load transactions</p>
+              <p className="text-sm mt-1">{error}</p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                isDark 
+                  ? 'bg-red-800/50 hover:bg-red-800/70' 
+                  : 'bg-red-100 hover:bg-red-200'
+              }`}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className={`rounded-xl shadow-sm border p-4 sm:p-6 transition-colors duration-300 ${
@@ -212,7 +270,12 @@ const TransactionsPage: React.FC = () => {
         </div>
 
         <div className={`divide-y ${isDark ? 'divide-dark-700' : 'divide-gray-200'}`}>
-          {filteredTransactions.length > 0 ? (
+          {loading ? (
+            <div className="p-8 sm:p-12 text-center">
+              <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Loading transactions...</p>
+            </div>
+          ) : filteredTransactions.length > 0 ? (
             filteredTransactions.map((transaction) => (
               <div key={transaction.id} className={`p-4 sm:p-6 transition-colors group ${
                 isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'

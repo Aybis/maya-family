@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, AlertTriangle, Plus, Search, Bell, RefreshCw, Edit, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '../store/useThemeStore';
@@ -13,15 +13,25 @@ const WarehousePage: React.FC = () => {
   const { t } = useTranslation();
   const { isDark } = useThemeStore();
   
-  const items = useWarehouseStore((state) => state.items);
-  const updateStock = useWarehouseStore((state) => state.updateStock);
-  const updateItem = useWarehouseStore((state) => state.updateItem);
-  const deleteItem = useWarehouseStore((state) => state.deleteItem);
-  const addItem = useWarehouseStore((state) => state.addItem);
-  const getLowStockItems = useWarehouseStore((state) => state.getLowStockItems);
+  const {
+    items,
+    loading,
+    error,
+    fetchItems,
+    updateStock,
+    updateItem,
+    deleteItem,
+    addItem,
+    getLowStockItems
+  } = useWarehouseStore();
 
   const categories = ['all', ...Array.from(new Set(items.map(item => item.category)))];
   const lowStockItems = getLowStockItems();
+
+  // Fetch items on component mount
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
   
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -47,28 +57,32 @@ const WarehousePage: React.FC = () => {
     };
   };
 
-  const handleStockUpdate = (itemId: string, newStock: number) => {
-    updateStock(itemId, newStock);
+  const handleStockUpdate = async (itemId: string, newStock: number) => {
+    await updateStock(itemId, newStock);
   };
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
   };
 
-  const handleSaveEdit = (updatedItem: any) => {
-    updateItem(editingItem.id, updatedItem);
+  const handleSaveEdit = async (updatedItem: any) => {
+    await updateItem(editingItem.id, updatedItem);
     setEditingItem(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      deleteItem(id);
+      await deleteItem(id);
     }
   };
 
-  const handleAddItem = (newItem: any) => {
-    addItem(newItem);
+  const handleAddItem = async (newItem: any) => {
+    await addItem(newItem);
     setShowAddForm(false);
+  };
+
+  const handleRefresh = () => {
+    fetchItems();
   };
 
   return (
@@ -84,6 +98,18 @@ const WarehousePage: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
+          <button 
+            onClick={handleRefresh}
+            disabled={loading}
+            className={`w-full sm:w-auto px-4 py-3 sm:py-2 rounded-lg font-medium transition-colors flex items-center justify-center ${
+              isDark 
+                ? 'bg-dark-600 text-gray-300 hover:bg-dark-500 disabled:opacity-50' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50'
+            }`}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
           <button className="w-full sm:w-auto bg-amber-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-amber-700 transition-colors flex items-center justify-center shadow-lg">
             <Bell className="h-4 w-4 mr-2" />
             Send Reminders
@@ -97,6 +123,32 @@ const WarehousePage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className={`border rounded-xl p-4 transition-colors duration-300 ${
+          isDark 
+            ? 'bg-red-900/20 border-red-800 text-red-400' 
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Failed to load warehouse items</p>
+              <p className="text-sm mt-1">{error}</p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                isDark 
+                  ? 'bg-red-800/50 hover:bg-red-800/70' 
+                  : 'bg-red-100 hover:bg-red-200'
+              }`}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Alert Summary */}
       {lowStockItems.length > 0 && (
@@ -266,9 +318,10 @@ const WarehousePage: React.FC = () => {
             <div className="flex gap-2 sm:col-span-2 lg:col-span-5">
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                disabled={loading}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
-                Add Item
+                {loading ? 'Adding...' : 'Add Item'}
               </button>
               <button
                 type="button"
@@ -283,6 +336,14 @@ const WarehousePage: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && !items.length && (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mr-3" />
+          <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Loading warehouse items...</span>
         </div>
       )}
 
@@ -415,7 +476,7 @@ const WarehousePage: React.FC = () => {
         })}
       </div>
 
-      {filteredItems.length === 0 && (
+      {!loading && filteredItems.length === 0 && (
         <div className={`rounded-xl shadow-sm border p-8 sm:p-12 text-center transition-colors duration-300 ${
           isDark ? 'bg-dark-800 border-dark-700' : 'bg-white border-gray-100'
         }`}>

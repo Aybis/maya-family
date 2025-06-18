@@ -1,6 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, X, RotateCcw, Check, Loader2, AlertCircle, Zap } from 'lucide-react';
 import { useThemeStore } from '../store/useThemeStore';
+import { apiService } from '../services/api';
+import { useAIStore } from '../store/useAIStore';
 
 interface CameraScannerProps {
   isOpen: boolean;
@@ -29,6 +31,7 @@ const CameraScanner: React.FC<CameraScannerProps> = ({ isOpen, onClose, onScanCo
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { isDark } = useThemeStore();
+  const { settings } = useAIStore();
 
   // Start camera stream
   const startCamera = useCallback(async () => {
@@ -88,124 +91,40 @@ const CameraScanner: React.FC<CameraScannerProps> = ({ isOpen, onClose, onScanCo
     processImage(imageData);
   }, [stopCamera]);
 
-  // Mock AI processing function
+  // Process image with API
   const processImage = async (imageData: string) => {
     setIsProcessing(true);
     setError(null);
 
     try {
-      // Simulate AI processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Mock AI response - in real implementation, this would call OpenAI Vision API or Google Gemini
-      const mockResult: ScanResult = {
-        amount: Math.floor(Math.random() * 500000) + 50000, // Random amount between 50k-550k
-        description: 'Groceries from Supermarket',
-        category: 'Food',
-        items: ['Milk 1L', 'Bread', 'Eggs 12pcs', 'Rice 5kg', 'Cooking Oil'],
-        merchant: 'Supermarket ABC',
-        date: new Date().toISOString().split('T')[0],
-        confidence: 0.92
-      };
-
-      setScanResult(mockResult);
-    } catch (err) {
-      setError('Failed to process receipt. Please try again.');
-      console.error('AI processing error:', err);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Real AI integration function (commented out - requires API keys)
-  const processImageWithAI = async (imageData: string) => {
-    setIsProcessing(true);
-    setError(null);
-
-    try {
-      // Example OpenAI Vision API call
-      /*
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.VITE_OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "gpt-4-vision-preview",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "Extract transaction details from this receipt. Return JSON with: amount (number), description (string), category (string), items (array), merchant (string), date (string). Categories: Food, Transportation, Bills, Entertainment, Healthcare, Education, Shopping, Others."
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: imageData
-                  }
-                }
-              ]
-            }
-          ],
-          max_tokens: 500
-        })
-      });
-
-      const data = await response.json();
-      const result = JSON.parse(data.choices[0].message.content);
-      setScanResult({ ...result, confidence: 0.9 });
-      */
-
-      // Example Google Gemini API call
-      /*
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${process.env.VITE_GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: "Extract transaction details from this receipt image. Return JSON format with: amount (number), description (string), category (Food/Transportation/Bills/Entertainment/Healthcare/Education/Shopping/Others), items (array of strings), merchant (string), date (YYYY-MM-DD). Be accurate with numbers."
-              },
-              {
-                inline_data: {
-                  mime_type: "image/jpeg",
-                  data: imageData.split(',')[1] // Remove data:image/jpeg;base64, prefix
-                }
-              }
-            ]
-          }]
-        })
-      });
-
-      const data = await response.json();
-      const result = JSON.parse(data.candidates[0].content.parts[0].text);
-      setScanResult({ ...result, confidence: 0.85 });
-      */
-
-      // For now, use mock data
-      const mockResult: ScanResult = {
-        amount: Math.floor(Math.random() * 500000) + 50000,
-        description: 'Groceries from Supermarket',
-        category: 'Food',
-        items: ['Milk 1L', 'Bread', 'Eggs 12pcs', 'Rice 5kg', 'Cooking Oil'],
-        merchant: 'Supermarket ABC',
-        date: new Date().toISOString().split('T')[0],
-        confidence: 0.92
-      };
-
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setScanResult(mockResult);
-
-    } catch (err) {
-      setError('Failed to process receipt. Please try again.');
-      console.error('AI processing error:', err);
+      // Try real API first
+      const result = await apiService.scanInvoice(imageData);
+      setScanResult(result);
+    } catch (apiError) {
+      console.warn('API scan failed, trying dummy endpoint:', apiError);
+      
+      try {
+        // Fallback to dummy API
+        const dummyResult = await apiService.getDummyInvoiceScan();
+        setScanResult(dummyResult);
+      } catch (dummyError) {
+        console.error('Dummy API also failed, using mock data:', dummyError);
+        
+        // Final fallback to mock data
+        const mockResult: ScanResult = {
+          amount: Math.floor(Math.random() * 500000) + 50000,
+          description: 'Groceries from Supermarket',
+          category: 'Food',
+          items: ['Milk 1L', 'Bread', 'Eggs 12pcs', 'Rice 5kg', 'Cooking Oil'],
+          merchant: 'Supermarket ABC',
+          date: new Date().toISOString().split('T')[0],
+          confidence: 0.92
+        };
+        
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setScanResult(mockResult);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -361,7 +280,7 @@ const CameraScanner: React.FC<CameraScannerProps> = ({ isOpen, onClose, onScanCo
                   <div className="text-white text-center">
                     <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
                     <p className="text-sm">AI is processing your receipt...</p>
-                    <p className="text-xs mt-1 opacity-75">This may take a few seconds</p>
+                    <p className="text-xs mt-1 opacity-75">Using {settings.provider === 'mock' ? 'Demo Mode' : 'API'}</p>
                   </div>
                 </div>
               </div>

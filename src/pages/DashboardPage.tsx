@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Wallet, TrendingUp, TrendingDown, PiggyBank, Plus, ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Wallet, TrendingUp, TrendingDown, PiggyBank, Plus, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '../store/useThemeStore';
 import MetricCard from '../components/MetricCard';
 import StockWarning from '../components/StockWarning';
 import TransactionModal from '../components/TransactionModal';
 import { useTransactionStore } from '../store/useTransactionStore';
+import { useWarehouseStore } from '../store/useWarehouseStore';
 
 const DashboardPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,10 +15,31 @@ const DashboardPage: React.FC = () => {
   const { t } = useTranslation();
   const { isDark } = useThemeStore();
   
-  const transactions = useTransactionStore((state) => state.transactions);
-  const totalIncome = useTransactionStore((state) => state.getTotalIncome());
-  const totalExpenses = useTransactionStore((state) => state.getTotalExpenses());
-  const netBalance = useTransactionStore((state) => state.getNetBalance());
+  const { 
+    transactions, 
+    loading: transactionsLoading, 
+    error: transactionsError,
+    fetchTransactions,
+    getTotalIncome,
+    getTotalExpenses,
+    getNetBalance 
+  } = useTransactionStore();
+  
+  const { 
+    loading: warehouseLoading, 
+    error: warehouseError,
+    fetchItems 
+  } = useWarehouseStore();
+
+  const totalIncome = getTotalIncome();
+  const totalExpenses = getTotalExpenses();
+  const netBalance = getNetBalance();
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchTransactions();
+    fetchItems();
+  }, [fetchTransactions, fetchItems]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -36,6 +58,13 @@ const DashboardPage: React.FC = () => {
     { name: 'Bills', amount: 150000, percentage: 34 }
   ];
 
+  const handleRefresh = async () => {
+    await Promise.all([
+      fetchTransactions(),
+      fetchItems()
+    ]);
+  };
+
   return (
     <div className="space-y-6 lg:space-y-8">
       {/* Stock Warning */}
@@ -53,7 +82,19 @@ const DashboardPage: React.FC = () => {
             {t('welcome_overview')}
           </p>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex gap-3">
+          <button 
+            onClick={handleRefresh}
+            disabled={transactionsLoading || warehouseLoading}
+            className={`px-4 py-3 sm:py-2 rounded-lg font-medium transition-colors flex items-center justify-center ${
+              isDark 
+                ? 'bg-dark-600 text-gray-300 hover:bg-dark-500 disabled:opacity-50' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50'
+            }`}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${transactionsLoading || warehouseLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
           <button 
             onClick={() => setIsModalOpen(true)}
             className="w-full sm:w-auto bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center shadow-lg"
@@ -63,6 +104,37 @@ const DashboardPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Error Messages */}
+      {(transactionsError || warehouseError) && (
+        <div className={`border rounded-xl p-4 transition-colors duration-300 ${
+          isDark 
+            ? 'bg-yellow-900/20 border-yellow-800 text-yellow-400' 
+            : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+        }`}>
+          <div className="flex items-center">
+            <div className="flex-1">
+              <p className="font-medium">API Connection Issues</p>
+              <p className="text-sm mt-1">
+                {transactionsError && `Transactions: ${transactionsError}`}
+                {transactionsError && warehouseError && ' | '}
+                {warehouseError && `Warehouse: ${warehouseError}`}
+              </p>
+              <p className="text-xs mt-1 opacity-75">Using cached data and fallback to demo mode.</p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className={`ml-4 px-3 py-1 rounded text-sm font-medium transition-colors ${
+                isDark 
+                  ? 'bg-yellow-800/50 hover:bg-yellow-800/70' 
+                  : 'bg-yellow-100 hover:bg-yellow-200'
+              }`}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
@@ -188,45 +260,52 @@ const DashboardPage: React.FC = () => {
           </button>
         </div>
         
-        <div className="space-y-3 sm:space-y-4">
-          {recentTransactions.map((transaction) => (
-            <div key={transaction.id} className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-              isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
-            }`}>
-              <div className="flex items-center space-x-3 min-w-0 flex-1">
-                <div className={`p-2 rounded-full flex-shrink-0 ${
-                  transaction.type === 'income' 
-                    ? isDark ? 'bg-green-900/30' : 'bg-green-100'
-                    : isDark ? 'bg-red-900/30' : 'bg-red-100'
-                }`}>
-                  {transaction.type === 'income' ? (
-                    <ArrowUp className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <ArrowDown className="h-4 w-4 text-red-600" />
-                  )}
+        {transactionsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <RefreshCw className="h-6 w-6 animate-spin text-blue-600 mr-2" />
+            <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Loading transactions...</span>
+          </div>
+        ) : (
+          <div className="space-y-3 sm:space-y-4">
+            {recentTransactions.map((transaction) => (
+              <div key={transaction.id} className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
+                isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-50'
+              }`}>
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                  <div className={`p-2 rounded-full flex-shrink-0 ${
+                    transaction.type === 'income' 
+                      ? isDark ? 'bg-green-900/30' : 'bg-green-100'
+                      : isDark ? 'bg-red-900/30' : 'bg-red-100'
+                  }`}>
+                    {transaction.type === 'income' ? (
+                      <ArrowUp className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <ArrowDown className="h-4 w-4 text-red-600" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {transaction.description}
+                    </p>
+                    <p className={`text-sm truncate ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {transaction.category} • {transaction.paymentMethod}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {transaction.description}
+                <div className="text-right flex-shrink-0 ml-4">
+                  <p className={`font-semibold text-sm sm:text-base ${
+                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                   </p>
-                  <p className={`text-sm truncate ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {transaction.category} • {transaction.paymentMethod}
+                  <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {new Date(transaction.date).toLocaleDateString('id-ID')}
                   </p>
                 </div>
               </div>
-              <div className="text-right flex-shrink-0 ml-4">
-                <p className={`font-semibold text-sm sm:text-base ${
-                  transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                </p>
-                <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {new Date(transaction.date).toLocaleDateString('id-ID')}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Transaction Modal */}
